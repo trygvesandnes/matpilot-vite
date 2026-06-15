@@ -4718,6 +4718,16 @@ export default function App(){
     setSide(null); setTab("produkter"); setFase("onboarding");
   };
 
+  // Synkroniser ekte butikker til globalt array som prismotoren bruker
+  useEffect(()=>{
+    if(ekteButikker.length){
+      const eksisterendeNavn = new Set(ekteButikker.map(b=>(b.navn+b.kjede).toLowerCase()));
+      const fraSeed = BUTIKKER_BASIS.filter(b=>!eksisterendeNavn.has((b.navn+b.kjede).toLowerCase()));
+      SEED_BUTIKKER.length = 0;
+      SEED_BUTIKKER.push(...ekteButikker, ...fraSeed);
+    }
+  }, [ekteButikker]);
+
   if(fase==="laster") return (
     <div style={{minHeight:"100vh",background:C.bg,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",fontFamily:FONT,gap:20}}>
       <div style={{fontSize:52}}>🧭</div>
@@ -4735,14 +4745,6 @@ export default function App(){
     {id:"kunnskap",navn:"Kunnskap",ikon:Ikon.bok},
     {id:"profil",navn:"Profil",ikon:Ikon.person},
   ];
-
-  // Synkroniser ekte butikker til globalt array som prismotoren bruker
-  if(ekteButikker.length){
-    const eksisterendeNavn = new Set(ekteButikker.map(b=>(b.navn+b.kjede).toLowerCase()));
-    const fraSeed = BUTIKKER_BASIS.filter(b=>!eksisterendeNavn.has((b.navn+b.kjede).toLowerCase()));
-    SEED_BUTIKKER.length = 0;
-    SEED_BUTIKKER.push(...ekteButikker, ...fraSeed);
-  }
 
   settKatalog(ekstraVarer, ekstraButikker, fjernedeVarer, fjernedeButikker, bildeOverstyr);
   settPrisData(rapporter, bekreftelser, adminPriser);
