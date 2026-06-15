@@ -2131,6 +2131,8 @@ function optimalKombinasjon(vareIds, antaller, butikkIds, maxButikker){
 function KurvSide({kurv, butikkIds, pv, onEndre, onAapne, maxButikker, setMaxButikker, onGaaTab}){
   const scrollRef = useRef(null);
   const scrollPos = useRef(0);
+  const [optimal, setOptimal] = useState(null);
+  const [regner, setRegner] = useState(false);
 
   const endreOgBevarScroll = (id, delta) => {
     scrollPos.current = scrollRef.current?.scrollTop || 0;
@@ -2148,10 +2150,17 @@ function KurvSide({kurv, butikkIds, pv, onEndre, onAapne, maxButikker, setMaxBut
   const vareIds = varer.map(x=>x.vare.id);
   const antaller = Object.fromEntries(varer.map(x=>[x.vare.id, x.antall]));
 
-  // Beregn optimal fordeling for valgt antall butikker
-  const optimal = useMemo(()=>
-    varer.length ? optimalKombinasjon(vareIds, antaller, butikkIds, maxButikker) : null
-  , [kurv, butikkIds, maxButikker, pv]);
+  // Beregn optimal fordeling asynkront for å unngå å blokkere UI
+  useEffect(()=>{
+    if(!varer.length){ setOptimal(null); return; }
+    setRegner(true);
+    const timer = setTimeout(()=>{
+      const res = optimalKombinasjon(vareIds, antaller, butikkIds, maxButikker);
+      setOptimal(res);
+      setRegner(false);
+    }, 50);
+    return ()=>clearTimeout(timer);
+  }, [JSON.stringify(kurv), JSON.stringify(butikkIds), maxButikker, pv]);
 
   // Sammenligning av alle enkeltbutikker (én-butikk-scenario)
   const enButikkSamm = useMemo(()=>
@@ -2159,7 +2168,7 @@ function KurvSide({kurv, butikkIds, pv, onEndre, onAapne, maxButikker, setMaxBut
       const res = totalForKombinasjon(vareIds, antaller, [bid]);
       return {butikk: SEED_BUTIKKER.find(b=>b.id===bid), ...res};
     }).sort((a,b)=>a.sum-b.sum)
-  , [kurv, butikkIds, pv]);
+  , [JSON.stringify(kurv), JSON.stringify(butikkIds), pv]);
 
   // Besparelse mot billigste enkeltbutikk, nest beste, og dyreste
   const besparelser = useMemo(()=>{
@@ -2221,7 +2230,12 @@ function KurvSide({kurv, butikkIds, pv, onEndre, onAapne, maxButikker, setMaxBut
       )}
 
       {/* ── Optimal plan ── */}
-      {optimal && (
+      {regner && (
+        <div style={{...sCard,padding:18,marginBottom:14,textAlign:"center",color:C.sub,fontSize:13.5}}>
+          ⏳ Beregner beste fordeling…
+        </div>
+      )}
+      {!regner && optimal && (
         <div style={{...sCard,padding:18,marginBottom:14,border:`2px solid ${C.ok}`,background:C.okLys}}>
           <div style={{fontSize:11.5,fontWeight:800,color:C.ok,textTransform:"uppercase",letterSpacing:0.5,marginBottom:6}}>
             {optimal.butikker.length===1?"Beste enkeltbutikk":"Optimal fordeling"}
