@@ -2140,8 +2140,9 @@ function KurvSide({kurv, butikkIds, pv, onEndre, onAapne, maxButikker, setMaxBut
   useEffect(()=>{
     if(scrollRef.current && scrollPos.current > 0){
       scrollRef.current.scrollTop = scrollPos.current;
+      scrollPos.current = 0;
     }
-  });
+  }, [kurv]);
 
   const varer = Object.entries(kurv).map(([id,antall])=>({vare:VARER.find(v=>v.id===id), antall})).filter(x=>x.vare);
   const vareIds = varer.map(x=>x.vare.id);
