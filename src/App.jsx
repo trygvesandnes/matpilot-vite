@@ -1485,6 +1485,7 @@ function finnAlternativer(vare, butikkIds){
 function ProduktDetalj({vare, butikkIds, favoritt, premium, pv, onTilbake, onLeggTil, onFavoritt, onLeggIListe, onRapporter, onBekreft, onAapne, onAapnePremium}){
   const priser = useMemo(()=>
     butikkIds.map(bid=>({butikk:SEED_BUTIKKER.find(b=>b.id===bid), p:prisMedFallback(vare.id,bid)}))
+      .filter(x=>x.p && x.butikk).sort((a,b)=>a.p.pris-b.p.pris)
       .filter(x=>x.p).sort((a,b)=>a.p.pris-b.p.pris)
   ,[vare.id,butikkIds,pv]);
   const score = useMemo(()=>produktScore(vare, butikkIds),[vare.id,butikkIds,pv]);
@@ -1531,7 +1532,7 @@ function ProduktDetalj({vare, butikkIds, favoritt, premium, pv, onTilbake, onLeg
             <div style={{display:"flex",alignItems:"baseline",gap:8,marginBottom:12}}>
               <span style={{fontSize:24,fontWeight:800,color:C.text}}>{billigst.p.pris.toFixed(2).replace(".",",")} kr</span>
               {prisPrKg && <span style={{fontSize:13,color:C.sub}}>{prisPrKg} kr/kg</span>}
-              <span style={{fontSize:12,color:C.sub}}>· billigst hos {billigst.butikk.navn}</span>
+              {billigst?.butikk && <span style={{fontSize:12,color:C.sub}}>· billigst hos {billigst.butikk.navn}</span>}
             </div>
           )}
           {vare.nova && <NovaBadge nova={vare.nova} stor/>}
@@ -2177,8 +2178,10 @@ function KurvSide({kurv, butikkIds, pv, onEndre, onAapne, maxButikker, setMaxBut
   const enButikkSamm = useMemo(()=>
     butikkIds.map(bid=>{
       const res = totalForKombinasjon(vareIds, antaller, [bid]);
-      return {butikk: SEED_BUTIKKER.find(b=>b.id===bid), ...res};
-    }).sort((a,b)=>a.sum-b.sum)
+      const butikk = SEED_BUTIKKER.find(b=>b.id===bid);
+      if(!butikk) return null;
+      return {butikk, ...res};
+    }).filter(Boolean).sort((a,b)=>a.sum-b.sum)
   , [JSON.stringify(kurv), JSON.stringify(butikkIds), pv]);
 
   // Besparelse mot billigste enkeltbutikk, nest beste, og dyreste
@@ -2921,7 +2924,7 @@ function TilbudsSide({butikkIds, rapporter, pv, onAapne, onLeggTil, onTilbake}){
                     <ProduktBilde vare={r.vare} str={44}/>
                     <div style={{flex:1,minWidth:0}}>
                       <div style={{fontSize:14,fontWeight:700,color:C.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{r.vare.navn}</div>
-                      <div style={{fontSize:12,color:C.sub}}>{r.butikk.navn}</div>
+                      <div style={{fontSize:12,color:C.sub}}>{r.butikk?.navn}</div>
                       <div style={{display:"flex",gap:5,marginTop:3,flexWrap:"wrap"}}>
                         {r.utgaatt
                           ? <span style={{background:C.errLys,color:C.err,borderRadius:4,fontSize:10,fontWeight:700,padding:"1px 6px"}}>Utgått</span>
@@ -3682,7 +3685,7 @@ function AdminDatakvalitetSide({rapporter, onTilbake}){
             {avvik.map((a,i)=>(
               <div key={i} style={{...sCard,padding:"12px 14px"}}>
                 <div style={{fontSize:13.5,fontWeight:700,color:C.text}}>{a.vare.navn}</div>
-                <div style={{fontSize:12,color:C.sub,marginBottom:6}}>{a.butikk.navn}</div>
+                <div style={{fontSize:12,color:C.sub,marginBottom:6}}>{a.butikk?.navn}</div>
                 <div style={{display:"flex",gap:10,alignItems:"center"}}>
                   <span style={{fontSize:16,fontWeight:800,color:C.err}}>{a.pris.toFixed(2).replace(".",",")} kr</span>
                   <span style={{fontSize:12,color:C.sub}}>vs snitt {a.snitt.toFixed(2).replace(".",",")} kr</span>
