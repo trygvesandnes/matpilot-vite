@@ -34,10 +34,7 @@ const KJEDER = {
   REMA_1000:   {navn:"Rema 1000",     farge:"#cc0000", gruppe:"Rema"},
   // Andre
   BUNNPRIS:    {navn:"Bunnpris",      farge:"#e06c00", gruppe:"Bunnpris"},
-  EUROPRIS:    {navn:"Europris",      farge:"#f7a800", gruppe:"Europris"},
-  FUDI:        {navn:"FUDI",          farge:"#e63946", gruppe:"FUDI"},
-  HAVARISTEN:  {navn:"Havaristen",    farge:"#1d3557", gruppe:"Havaristen"},
-  GIGABOKS:    {navn:"Gigaboks",      farge:"#2d6a4f", gruppe:"NorgesGruppen"},
+  HAVARISTEN:  {navn:"Havaristen",    farge:"#1d3557", gruppe:"Nettbutikk"},
   ODA:         {navn:"Oda",           farge:"#6a0dad", gruppe:"Nettbutikk"},
 };
 const SEED_BUTIKKER = [
@@ -67,8 +64,6 @@ const SEED_BUTIKKER = [
   {id:"obs_ski",           navn:"Coop Obs Ski",          kjede:"COOP_OBS",     adresse:"Ski storsenter",           sted:"Ski"},
   {id:"prix_oslo_s",       navn:"Coop Prix Oslo S",      kjede:"COOP_PRIX",    adresse:"Oslo sentralstasjon",      sted:"Oslo"},
   {id:"bunnpris_gronland", navn:"Bunnpris Grønland",     kjede:"BUNNPRIS",     adresse:"Grønlandsleiret 25",       sted:"Oslo"},
-  {id:"europris_oslo_city",navn:"Europris Oslo City",    kjede:"EUROPRIS",     adresse:"Stenersgata 1",            sted:"Oslo"},
-  {id:"fudi_oslo",         navn:"FUDI Mortensrud",       kjede:"FUDI",         adresse:"Mortensrud senter",        sted:"Oslo"},
 
   // ── BERGEN ──────────────────────────────────────────────────────────────
   {id:"kiwi_bergen_sentrum",  navn:"Kiwi Bergen sentrum",  kjede:"KIWI",      adresse:"Strandgaten 10",           sted:"Bergen"},
@@ -85,7 +80,6 @@ const SEED_BUTIKKER = [
   {id:"extra_aaane_storsenter",navn:"Coop Extra Åsane",    kjede:"COOP_EXTRA",adresse:"Åsane senter",             sted:"Bergen"},
   {id:"obs_horisont",         navn:"Coop Obs Horisont",    kjede:"COOP_OBS",  adresse:"Folke Bernadottes vei 41", sted:"Bergen"},
   {id:"bunnpris_bergen",      navn:"Bunnpris Møhlenpris",  kjede:"BUNNPRIS",  adresse:"Møhlenprisen 14",          sted:"Bergen"},
-  {id:"europris_vestkanten",  navn:"Europris Vestkanten",  kjede:"EUROPRIS",  adresse:"Vestkanten kjøpesenter",   sted:"Bergen"},
 
   // ── TRONDHEIM ───────────────────────────────────────────────────────────
   {id:"rema_lade",            navn:"Rema 1000 Lade",             kjede:"REMA_1000",  adresse:"Haakon VIIs gate 9",       sted:"Trondheim"},
@@ -156,7 +150,6 @@ const SEED_BUTIKKER = [
   {id:"spar_sandnes",          navn:"Spar Sandnes",            kjede:"SPAR",      adresse:"Rådhusgata 5",             sted:"Sandnes"},
   {id:"eurospar_stavanger",    navn:"Eurospar Stavanger",      kjede:"EUROSPAR",  adresse:"Bekkefaret 25",            sted:"Stavanger"},
   {id:"bunnpris_stavanger",    navn:"Bunnpris Stavanger",      kjede:"BUNNPRIS",  adresse:"Bergelandsgata 6",         sted:"Stavanger"},
-  {id:"europris_stavanger",    navn:"Europris Stavanger",      kjede:"EUROPRIS",  adresse:"Hillevågsveien 27",        sted:"Stavanger"},
 
   // ── KRISTIANSAND ─────────────────────────────────────────────────────────
   {id:"kiwi_kristiansand",    navn:"Kiwi Kristiansand sentrum",kjede:"KIWI",      adresse:"Markens gate 5",           sted:"Kristiansand"},
@@ -257,9 +250,7 @@ const SEED_BUTIKKER = [
   {id:"spar_mandal",         navn:"Spar Mandal",              kjede:"SPAR",      adresse:"Store Elvegate 31",        sted:"Mandal"},
   {id:"naerbutikken_evje",   navn:"Nærbutikken Evje",         kjede:"NAERBUTIKKEN",adresse:"Evje sentrum",           sted:"Evje"},
 
-  // ── GIGABOKS / HAVARISTEN / ANDRE ─────────────────────────────────────────
-  {id:"gigaboks_oslo",       navn:"Gigaboks Oslo Sinsen",     kjede:"GIGABOKS",  adresse:"Sinsenkrysset 5",          sted:"Oslo"},
-  {id:"gigaboks_bergen",     navn:"Gigaboks Bergen",          kjede:"GIGABOKS",  adresse:"Lagunen storsenter",       sted:"Bergen"},
+  // ── HAVARISTEN (nettbutikk) ────────────────────────────────────────────────
   {id:"havaristen_oslo",     navn:"Havaristen Torshov",       kjede:"HAVARISTEN",adresse:"Vogts gate 72",            sted:"Oslo"},
   {id:"havaristen_bergen",   navn:"Havaristen Bergen",        kjede:"HAVARISTEN",adresse:"Ibsensgate 16",            sted:"Bergen"},
   {id:"marked_oslo",         navn:"Coop Marked Vinderen",     kjede:"COOP_MARKED",adresse:"Slemdalsveien 67",        sted:"Oslo"},
@@ -1107,7 +1098,7 @@ function GuideModal({onLukk}){
 /* ════ ONBOARDING ════ */
 function Onboarding({onFerdig}){
   const [steg,setSteg] = useState(0);
-  const [kjeder,setKjeder] = useState(Object.keys(KJEDER));
+  const [kjeder,setKjeder] = useState(["KIWI","REMA_1000","BUNNPRIS","COOP_EXTRA"]);
   const [butikker,setButikker] = useState([]);
   const [posisjonStatus,setPosisjonStatus] = useState("idle");
   const [ekteOnboardingButikker,setEkteOnboardingButikker] = useState([]);
@@ -1208,7 +1199,7 @@ function Onboarding({onFerdig}){
       <h2 style={{fontSize:22,fontWeight:800,margin:"0 0 6px",color:C.text}}>Hvilke kjeder handler du i?</h2>
       <p style={{fontSize:14,color:C.sub,margin:"0 0 20px",lineHeight:1.5}}>Velg kjedene som er aktuelle for deg. Dette kan endres når som helst under Profil → Mine butikker.</p>
       <div style={{marginBottom:14}}>
-        {["NorgesGruppen","Coop","Rema","Bunnpris","Europris","FUDI","Havaristen","Nettbutikk"].map(gruppe=>{
+        {["NorgesGruppen","Coop","Rema","Bunnpris","Nettbutikk"].map(gruppe=>{
           const kjedeEntries = Object.entries(KJEDER).filter(([,i])=>i.gruppe===gruppe);
           if(!kjedeEntries.length) return null;
           return (
@@ -1264,10 +1255,10 @@ function Onboarding({onFerdig}){
       {/* Bokstavindeks + scrollbar */}
       {(()=>{
         const filtrerte = butikkSok.trim()
-          ? aktuelle.filter(b=>b.navn.toLowerCase().includes(butikkSok.toLowerCase())||b.sted.toLowerCase().includes(butikkSok.toLowerCase()))
+          ? aktuelle.filter(b=>b.navn.toLowerCase().includes(butikkSok.toLowerCase())||b.sted.toLowerCase().includes(butikkSok.toLowerCase())||b.adresse.toLowerCase().includes(butikkSok.toLowerCase()))
           : aktuelle;
-        const steder=[...new Set(filtrerte.map(b=>b.sted))].sort();
-        const bokstaver=[...new Set(steder.map(s=>s[0].toUpperCase()))].sort();
+        const steder=[...new Set(filtrerte.map(b=>b.sted))].sort((a,b)=>a.localeCompare(b,"no")).filter(s=>/^[A-ZÆØÅa-zæøå]/i.test(s));
+        const bokstaver=[...new Set(steder.map(s=>s[0].toUpperCase()))].sort((a,b)=>a.localeCompare(b,"no"));
         return (
           <div style={{position:"relative"}}>
             {/* Bokstavindeks i høyrekanten */}
@@ -1286,9 +1277,7 @@ function Onboarding({onFerdig}){
               const bkstav=sted[0].toUpperCase();
               return (
                 <div key={sted} id={"sted-"+bkstav} style={{marginBottom:16}}>
-                  <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
-                    <span style={{fontSize:13,fontWeight:800,color:C.sub,textTransform:"uppercase",letterSpacing:0.4}}>📍 {sted}</span>
-                  </div>
+                  <div style={{fontSize:13,fontWeight:800,color:C.sub,textTransform:"uppercase",letterSpacing:0.4,marginBottom:8,paddingLeft:2}}>📍 {sted}</div>
                   <div style={{display:"flex",flexDirection:"column",gap:8}}>
                     {bs.map(b=>{
                       const valgt=butikker.includes(b.id);
@@ -1299,9 +1288,7 @@ function Onboarding({onFerdig}){
                             <div style={{fontSize:14.5,fontWeight:700,color:C.text}}>{b.navn}</div>
                             <div style={{fontSize:12.5,color:C.sub}}>{b.adresse}</div>
                           </div>
-                          <div style={{width:22,height:22,borderRadius:11,border:valgt?"none":`2px solid ${C.border}`,background:valgt?C.blue:"#fff",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                            {valgt && Ikon.sjekk()}
-                          </div>
+                          {valgt && <span style={{color:C.blue,fontSize:18}}>✓</span>}
                         </button>
                       );
                     })}
@@ -1372,12 +1359,6 @@ function ProduktKort({vare, butikkIds, pv, paaTilbud, favoritt, onAapne, onLeggT
       <div style={{flex:1,minWidth:0}}>
         <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:1,flexWrap:"wrap"}}>
           <div style={{fontSize:14.5,fontWeight:700,color:C.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flex:1}}>{vare.navn}</div>
-          {anbefalt && (
-            <span
-              onClick={(e)=>{e.stopPropagation(); alert(`⭐ Anbefalt\n\nDette produktet har score ${score?.toFixed(1)}/10 basert på:\n• Lite bearbeidet (NOVA ${vare.nova ?? "–"})\n• Proteininnhold${vare.m?.protein!=null?" ("+vare.m.protein+"g)":""}\n• Pris i forhold til lignende produkter\n\nScore over 7,5 gir Anbefalt-merket.`);}}
-              style={{background:C.ok,color:"#fff",borderRadius:6,fontSize:10,fontWeight:800,padding:"1px 6px",flexShrink:0,cursor:"pointer"}}
-            >★ Anbefalt ℹ️</span>
-          )}
           {paaTilbud && <span style={{background:C.tilbud,color:C.tilbudTekst,border:`1px solid ${C.tilbudKant}`,borderRadius:6,fontSize:10,fontWeight:800,padding:"1px 6px",flexShrink:0}}>TILBUD</span>}
         </div>
         <div style={{fontSize:12,color:C.sub,marginBottom:5}}>{vare.prod}</div>
@@ -1521,9 +1502,9 @@ function ProduktDetalj({vare, butikkIds, favoritt, premium, pv, onTilbake, onLeg
               <div style={{fontSize:13.5,color:C.sub}}>{vare.prod}</div>
             </div>
             {score!=null && (
-              <div style={{textAlign:"center",flexShrink:0}}>
+              <div style={{textAlign:"center",flexShrink:0,cursor:"pointer"}} onClick={()=>alert(`Produktscore 0–10\n\nScoren beregnes ut fra tre faktorer:\n\n🥦 NOVA (40%) – jo mindre bearbeidet, jo bedre\n💪 Protein (30%) – proteininnhold per 100g\n💰 Pris (30%) – billig relativt til lignende produkter\n\nOver 7 = grønn, 4–7 = gul, under 4 = rød.`)}>
                 <div style={{fontSize:22,fontWeight:800,color:score>=7?C.ok:score>=4?C.warn:C.err,lineHeight:1}}>{score.toFixed(1)}</div>
-                <div style={{fontSize:10,color:C.sub,fontWeight:700}}>SCORE</div>
+                <div style={{fontSize:10,color:C.sub,fontWeight:700}}>SCORE ℹ️</div>
               </div>
             )}
           </div>
@@ -1540,14 +1521,16 @@ function ProduktDetalj({vare, butikkIds, favoritt, premium, pv, onTilbake, onLeg
 
         {/* NOVA-forklaring */}
         {vare.nova && (
-          <div style={{...sCard,padding:16,marginBottom:14,borderLeft:`4px solid ${ni.farge}`}}>
-            <div style={{fontSize:13.5,fontWeight:800,color:ni.farge,marginBottom:4}}>{ni.tekst} (NOVA {vare.nova})</div>
-            <p style={{fontSize:12.5,color:C.sub,margin:0,lineHeight:1.55}}>
-              {vare.nova===1 && "Ubearbeidet eller minimalt bearbeidet mat – råvarer som er nær sin naturlige tilstand. Den sunneste kategorien."}
-              {vare.nova===2 && "Bearbeidede kulinariske ingredienser som olje, smør, sukker og salt – brukes til matlaging, sjelden spist alene."}
-              {vare.nova===3 && "Bearbeidet mat laget ved å tilsette salt, sukker eller olje til NOVA 1-råvarer. Greit i moderate mengder."}
-              {vare.nova===4 && "Ultraprosessert mat med tilsetningsstoffer, smaksforsterkere og industrielle ingredienser. Bør begrenses i kostholdet."}
-            </p>
+          <div style={{...sCard,padding:14,marginBottom:14,borderLeft:`4px solid ${ni.farge}`,display:"flex",gap:10,alignItems:"flex-start"}}>
+            <div style={{flex:1}}>
+              <div style={{fontSize:13,fontWeight:800,color:ni.farge,marginBottom:3}}>NOVA {vare.nova} – {ni.tekst}</div>
+              <p style={{fontSize:12.5,color:C.sub,margin:0,lineHeight:1.5}}>
+                {vare.nova===1 && "Ubearbeidet mat nær sin naturlige tilstand. Den sunneste kategorien."}
+                {vare.nova===2 && "Kulinariske ingredienser som olje, smør og sukker. Brukes til matlaging."}
+                {vare.nova===3 && "Bearbeidet mat med tilsatt salt, sukker eller olje. Greit i moderate mengder."}
+                {vare.nova===4 && "Ultraprosessert mat med tilsetningsstoffer og industrielle ingredienser. Bør begrenses."}
+              </p>
+            </div>
           </div>
         )}
 
@@ -1728,67 +1711,6 @@ function HjemSide({bruker, butikkIds, kurv, favoritter, lister, pv, premium, onA
             </div>
         }
       </div>
-
-      {/* ── Snarveger ── */}
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:16}}>
-        <button onClick={()=>onGaaTab("produkter")} style={{...sCard,padding:16,display:"flex",alignItems:"center",gap:10,cursor:"pointer",border:"none",textAlign:"left"}}>
-          <div style={{fontSize:26}}>🔍</div>
-          <div>
-            <div style={{fontSize:13.5,fontWeight:800,color:C.text}}>Finn produkter</div>
-            <div style={{fontSize:11.5,color:C.sub}}>Søk og filtrer</div>
-          </div>
-        </button>
-        <button onClick={()=>onGaaTab("kurv")} style={{...sCard,padding:16,display:"flex",alignItems:"center",gap:10,cursor:"pointer",border:"none",textAlign:"left",position:"relative"}}>
-          {antallIKurv>0 && <div style={{position:"absolute",top:10,right:10,background:C.err,color:"#fff",borderRadius:9,minWidth:18,height:18,fontSize:11,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",padding:"0 4px"}}>{antallIKurv}</div>}
-          <div style={{fontSize:26}}>🛒</div>
-          <div>
-            <div style={{fontSize:13.5,fontWeight:800,color:C.text}}>Handlekurv</div>
-            <div style={{fontSize:11.5,color:C.sub}}>{antallIKurv>0?`${antallIKurv} vare${antallIKurv!==1?"r":""}`:"Tom kurv"}</div>
-          </div>
-        </button>
-        <button onClick={()=>onAapneSide({navn:"tilbud"})} style={{...sCard,padding:16,display:"flex",alignItems:"center",gap:10,cursor:"pointer",border:"none",textAlign:"left"}}>
-          <div style={{fontSize:26}}>🏷️</div>
-          <div>
-            <div style={{fontSize:13.5,fontWeight:800,color:C.text}}>Tilbud</div>
-            <div style={{fontSize:11.5,color:C.sub}}>Rapporter og finn</div>
-          </div>
-        </button>
-        <button onClick={()=>onGaaTab("kunnskap")} style={{...sCard,padding:16,display:"flex",alignItems:"center",gap:10,cursor:"pointer",border:"none",textAlign:"left"}}>
-          <div style={{fontSize:26}}>📚</div>
-          <div>
-            <div style={{fontSize:13.5,fontWeight:800,color:C.text}}>Kunnskap</div>
-            <div style={{fontSize:11.5,color:C.sub}}>NOVA og ernæring</div>
-          </div>
-        </button>
-      </div>
-
-      {/* ── Hurtigsøk ── */}
-      <div style={{...sCard,padding:"10px 14px",marginBottom:16,display:"flex",alignItems:"center",gap:10,cursor:"pointer"}} onClick={()=>onGaaTab("produkter")}>
-        {Ikon.sok(C.sub)}
-        <span style={{fontSize:14,color:C.sub}}>Søk etter produkter…</span>
-      </div>
-
-      {/* ── Nylig sett ── */}
-      {nyligSett?.length>0 && (
-        <div style={{marginBottom:18}}>
-          <h2 style={{fontSize:15,fontWeight:800,margin:"0 0 10px",color:C.text}}>👁 Nylig sett</h2>
-          <div style={{display:"flex",gap:8,overflowX:"auto",paddingBottom:4}}>
-            {nyligSett.map(id=>{
-              const v = VARER.find(x=>x.id===id);
-              if(!v) return null;
-              const best = bestePris(v.id, butikkIds);
-              const ni = novaInfo(v.nova);
-              return (
-                <div key={id} onClick={()=>onAapne(v)} style={{...sCard,minWidth:110,maxWidth:130,padding:10,flexShrink:0,cursor:"pointer",borderTop:`3px solid ${ni.farge}`}}>
-                  <ProduktBilde vare={v} str={36} style={{margin:"0 auto 6px"}}/>
-                  <div style={{fontSize:11.5,fontWeight:700,color:C.text,lineHeight:1.3,overflow:"hidden",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",marginBottom:4}}>{v.navn}</div>
-                  {best && <div style={{fontSize:12.5,fontWeight:800,color:C.text}}>{best.pris.toFixed(2).replace(".",",")} kr</div>}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
 
       {/* ── Dagens spare-tips ── */}
       {(()=>{
