@@ -1707,7 +1707,7 @@ function HjemSide({bruker, butikkIds, kurv, favoritter, lister, pv, premium, onA
                   <span style={{fontSize:12.5,fontWeight:600,color:C.text}}>{b.navn}</span>
                 </div>
               ))}
-              <button onClick={()=>onAapneSide({navn:"butikkRediger"})} style={{background:"none",border:`1px dashed ${C.border}`,borderRadius:20,padding:"5px 10px",fontSize:12.5,color:C.sub,cursor:"pointer"}}>Endre</button>
+              <button onClick={()=>onAapneSide({navn:"butikker"})} style={{background:"none",border:`1px dashed ${C.border}`,borderRadius:20,padding:"5px 10px",fontSize:12.5,color:C.sub,cursor:"pointer"}}>Endre</button>
             </div>
         }
       </div>
@@ -2631,9 +2631,9 @@ function MineButikkerSide({butikkIds, onLagre, onTilbake}){
       <div style={{padding:16}}>
         <p style={{fontSize:13.5,color:C.sub,margin:"0 0 16px",lineHeight:1.5}}>Velg butikkene som er aktuelle for deg. Handlekurv-sammenligningen bruker kun disse.</p>
         {(()=>{
-          const steder = [...new Set(SEED_BUTIKKER.map(b=>b.sted))].sort();
+          const steder = [...new Set(SEED_BUTIKKER.map(b=>b.sted))].filter(s=>/^[A-ZÆØÅa-zæøå]/i.test(s)).sort((a,b)=>a.localeCompare(b,"no"));
           return steder.map(sted=>{
-            const bs = SEED_BUTIKKER.filter(b=>b.sted===sted && kjeder.some(k=>k===b.kjede));
+            const bs = SEED_BUTIKKER.filter(b=>b.sted===sted).filter(b=>!/^\d/.test(b.sted));
             if(!bs.length) return null;
             return (
               <div key={sted} style={{marginBottom:16}}>
