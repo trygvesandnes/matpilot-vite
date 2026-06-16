@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 
 /* ════ DESIGN TOKENS ════ */
 const C = {
@@ -2155,8 +2155,19 @@ function KurvSide({kurv, butikkIds, pv, onEndre, onAapne, maxButikker, setMaxBut
     if(!varer.length){ setOptimal(null); return; }
     setRegner(true);
     const timer = setTimeout(()=>{
-      const res = optimalKombinasjon(vareIds, antaller, butikkIds, maxButikker);
-      setOptimal(res);
+      try {
+        const res = optimalKombinasjon(vareIds, antaller, butikkIds, maxButikker);
+        setOptimal(res);
+      } catch(e) {
+        console.warn("Optimal beregning feilet:", e);
+        // Fallback: bruk billigste enkeltbutikk
+        try {
+          const fallback = totalForKombinasjon(vareIds, antaller, [butikkIds[0]]);
+          setOptimal({...fallback, butikker:[butikkIds[0]]});
+        } catch(e2) {
+          setOptimal(null);
+        }
+      }
       setRegner(false);
     }, 50);
     return ()=>clearTimeout(timer);
@@ -4344,7 +4355,29 @@ function ProfilSide({bruker, butikkIds, favoritter, lister, spiller, belonningSt
 /* ════ HOVEDAPP ════ */
 const LAGRINGSNOKKEL = "matpilot-v1";
 
-export default function App(){
+class ErrorBoundary extends React.Component {
+  constructor(props){ super(props); this.state={feil:null}; }
+  static getDerivedStateFromError(e){ return {feil:e.message}; }
+  render(){
+    if(this.state.feil) return (
+      <div style={{padding:32,textAlign:"center",fontFamily:"system-ui"}}>
+        <div style={{fontSize:40,marginBottom:16}}>⚠️</div>
+        <div style={{fontSize:16,fontWeight:700,marginBottom:8}}>Noe gikk galt</div>
+        <div style={{fontSize:13,color:"#666",marginBottom:24,background:"#f5f5f5",padding:12,borderRadius:8,textAlign:"left",wordBreak:"break-all"}}>{this.state.feil}</div>
+        <button onClick={()=>{ localStorage.clear(); window.location.reload(); }} style={{background:"#2563EB",color:"#fff",border:"none",borderRadius:10,padding:"12px 24px",fontSize:15,cursor:"pointer"}}>
+          Start på nytt
+        </button>
+      </div>
+    );
+    return this.props.children;
+  }
+}
+
+export default function AppWrapper(){
+  return <ErrorBoundary><App/></ErrorBoundary>;
+}
+
+function App(){
   const [fase,setFase] = useState("laster"); // laster | onboarding | app
   const [butikkIds,setButikkIds] = useState([]);
   const [tab,setTab] = useState("hjem");
