@@ -4429,7 +4429,8 @@ function App(){
       const r = await window.storage.get(LAGRINGSNOKKEL);
       if(r){
         const d = JSON.parse(r.value);
-        setButikkIds(d.butikkIds||[]);
+        const gyldige = (d.butikkIds||[]).filter(id=>BUTIKKER_BASIS.some(b=>b.id===id)||id.startsWith("rema_"));
+        setButikkIds(gyldige);
         setFavoritter(d.favoritter||[]);
         setKurv(d.kurv||{});
         setLister(d.lister||[]);
