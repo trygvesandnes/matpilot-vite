@@ -1711,7 +1711,12 @@ function HjemSide({bruker, butikkIds, kurv, favoritter, lister, pv, premium, onA
       <div style={{...sCard,padding:"12px 16px",marginBottom:14}}>
         <div style={{fontSize:12,fontWeight:800,color:C.sub,textTransform:"uppercase",letterSpacing:0.5,marginBottom:8}}>Dine butikker</div>
         {valgteButikker.length===0
-          ? <div style={{fontSize:13.5,color:C.sub}}>Ingen butikker valgt ennå.</div>
+          ? <div style={{textAlign:"center",padding:"8px 0"}}>
+              <div style={{fontSize:28,marginBottom:8}}>🏪</div>
+              <div style={{fontSize:15,fontWeight:800,color:C.text,marginBottom:6}}>Ingen butikker valgt ennå</div>
+              <div style={{fontSize:13,color:C.sub,marginBottom:14,lineHeight:1.5}}>Velg butikkene du handler i, så kan appen sammenligne priser for deg.</div>
+              <button onClick={()=>onAapneSide({navn:"butikker"})} style={{...sKnapp,width:"auto",padding:"10px 24px",display:"inline-block"}}>Velg mine butikker</button>
+            </div>
           : <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
               {valgteButikker.map(b=>(
                 <div key={b.id} style={{display:"flex",alignItems:"center",gap:5,background:C.bg,borderRadius:20,padding:"5px 10px"}}>
@@ -2199,6 +2204,22 @@ function KurvSide({kurv, butikkIds, pv, onEndre, onAapne, maxButikker, setMaxBut
     };
   }, [optimal, enButikkSamm]);
 
+  if(!butikkIds.length) return (
+    <div style={{padding:"16px 16px 0"}}>
+      <h1 style={{fontSize:24,fontWeight:800,margin:"0 0 14px",color:C.text,letterSpacing:-0.4}}>Handlekurv</h1>
+      <div style={{...sCard,padding:28,textAlign:"center"}}>
+        <div style={{fontSize:40,marginBottom:12}}>🏪</div>
+        <div style={{fontSize:16,fontWeight:800,color:C.text,marginBottom:8}}>Ingen butikker valgt</div>
+        <div style={{fontSize:13.5,color:C.sub,lineHeight:1.6,marginBottom:20}}>
+          Du må velge hvilke butikker du handler i før appen kan beregne beste pris for handlekurven din.
+        </div>
+        <button onClick={()=>onGaaTab("profil")} style={sKnapp}>
+          Velg mine butikker
+        </button>
+      </div>
+    </div>
+  );
+
   if(!varer.length) return (
     <div style={{padding:"16px 16px 0"}}>
       <h1 style={{fontSize:24,fontWeight:800,margin:"0 0 14px",color:C.text,letterSpacing:-0.4}}>Handlekurv</h1>
@@ -2206,7 +2227,7 @@ function KurvSide({kurv, butikkIds, pv, onEndre, onAapne, maxButikker, setMaxBut
         <div style={{fontSize:48,marginBottom:12}}>🛒</div>
         <div style={{fontSize:16,fontWeight:800,color:C.text,marginBottom:6}}>Handlekurven er tom</div>
         <div style={{fontSize:13.5,color:C.sub,lineHeight:1.6,marginBottom:20}}>
-          Legg til produkter, så finner appen den billigste kombinasjonen av butikker for deg – og viser deg nøyaktig hvor mye du sparer.
+          Legg til produkter, så finner appen den billigste kombinasjonen av butikker for deg.
         </div>
         <button onClick={()=>onGaaTab("produkter")} style={{...sKnapp,display:"inline-block",width:"auto",padding:"12px 28px"}}>
           Finn produkter
