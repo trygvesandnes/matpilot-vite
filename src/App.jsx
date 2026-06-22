@@ -1,17 +1,26 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { registrerBruker, loggInnBruker, loggUtBruker, sendTilbakestillEpost, oppdaterProfil, hentNaavaerendeBruker, lyttPaaAuthEndringer } from "./lib/supabaseAuth.js";
 
-/* ════ DESIGN TOKENS ════ */
+/* ════ DESIGN TOKENS – Trumf-inspirert ════ */
 const C = {
-  blue:"#2563EB", blueLys:"#EFF4FF", bg:"#F6F7F9", card:"#FFFFFF",
-  text:"#16181D", sub:"#6B7280", border:"#E9EBEE",
-  ok:"#16A34A", okLys:"#EAF7EE", warn:"#D97706", warnLys:"#FEF6E7", err:"#DC2626", errLys:"#FDECEC",
-  tilbud:"#cfe8ff", tilbudKant:"#4ba3e8", tilbudTekst:"#1a72c4", gull:"#F5B301",
+  // Primær – dyp marineblå
+  blue:"#3d52d5", blueLys:"#5c6ef5", bg:"#0d1580", bg2:"#1a237e",
+  // Kort og innhold
+  card:"#ffffff", card2:"#f0f2ff",
+  // Tekst
+  text:"#0d1580", textLys:"#ffffff", sub:"#555e8a",
+  // Grenser
+  border:"#e0e4f5",
+  // Status
+  ok:"#22c55e", okLys:"#dcfce7", warn:"#f59e0b", warnLys:"#fef6e7", err:"#ef4444", errLys:"#fde8e8",
+  // Tilbud
+  tilbud:"#e8edff", tilbudKant:"#5c6ef5", tilbudTekst:"#3d52d5", gull:"#f5c518",
 };
-const sCard = { background:C.card, borderRadius:14, border:`1px solid ${C.border}`, boxShadow:"0 1px 2px rgba(16,24,40,0.04)" };
-const sKnapp = { background:C.blue, color:"#fff", border:"none", borderRadius:12, padding:"13px 16px", fontSize:15, fontWeight:700, cursor:"pointer", width:"100%" };
-const sKnappSek = { background:"#fff", color:C.text, border:`1px solid ${C.border}`, borderRadius:12, padding:"12px 16px", fontSize:14, fontWeight:600, cursor:"pointer", width:"100%" };
-const sChip = (a)=>({ background:a?C.blue:"#fff", color:a?"#fff":C.sub, border:a?"none":`1px solid ${C.border}`, borderRadius:18, padding:"7px 14px", fontSize:13, fontWeight:600, cursor:"pointer", whiteSpace:"nowrap" });
-const sInput = { width:"100%", boxSizing:"border-box", border:`1px solid ${C.border}`, borderRadius:10, padding:"12px 14px", fontSize:15, background:"#fff", outline:"none" };
+const sCard = { background:C.card, borderRadius:20, boxShadow:"0 4px 24px rgba(13,21,128,0.10)", border:"none" };
+const sKnapp = { background:C.blue, color:"#fff", border:"none", borderRadius:14, padding:"14px 16px", fontSize:15, fontWeight:700, cursor:"pointer", width:"100%" };
+const sKnappSek = { background:C.card, color:C.text, border:`1px solid ${C.border}`, borderRadius:14, padding:"12px 16px", fontSize:14, fontWeight:600, cursor:"pointer", width:"100%" };
+const sChip = (a)=>({ background:a?C.blue:C.card, color:a?"#fff":C.sub, border:a?"none":`1px solid ${C.border}`, borderRadius:20, padding:"7px 16px", fontSize:13, fontWeight:600, cursor:"pointer", whiteSpace:"nowrap", boxShadow:a?"0 2px 8px rgba(61,82,213,0.3)":"none" });
+const sInput = { width:"100%", boxSizing:"border-box", border:`1px solid ${C.border}`, borderRadius:12, padding:"13px 14px", fontSize:15, background:C.card, outline:"none" };
 const lnk = { background:"none", border:"none", color:C.blue, fontSize:13, fontWeight:600, cursor:"pointer", padding:0 };
 
 /* ════ KJEDER & BUTIKKER ════ */
@@ -750,6 +759,11 @@ const REMA_BUTIKKER = [
 /* ════ KASSALAPP API-INTEGRASJON ════ */
 const PROXY_URL = "https://matpilot-api.vercel.app";
 
+// Kun disse e-postadressene får administratortilgang. Legg til/fjern din egen e-post her.
+// (Senere kan dette flyttes til en sikrere serverbasert sjekk, men dette stopper
+// vanlige brukere fra å gi seg selv admin-tilgang.)
+const ADMIN_EPOSTER = ["apphjelp@hotmail.com"];
+
 // Cache: vareId → { ean, priser: { KIWI: 29.9, REMA_1000: 27.9, ... } }
 let G_EAN_CACHE = {};
 
@@ -1175,7 +1189,7 @@ function Onboarding({onFerdig}){
     <div style={{minHeight:"100vh",background:C.card,display:"flex",flexDirection:"column",justifyContent:"center",padding:"40px 28px",boxSizing:"border-box",fontFamily:"-apple-system,'Segoe UI',Roboto,sans-serif"}}>
       <div style={{textAlign:"center",marginBottom:36}}>
         <div style={{width:84,height:84,borderRadius:24,background:C.blueLys,display:"flex",alignItems:"center",justifyContent:"center",fontSize:42,margin:"0 auto 18px"}}>🛒</div>
-        <h1 style={{fontSize:30,fontWeight:800,margin:"0 0 8px",color:C.text,letterSpacing:-0.5}}>Matpilot</h1>
+        <h1 style={{fontSize:30,fontWeight:800,margin:"0 0 8px",color:C.text,letterSpacing:-0.5}}>Matsmart</h1>
         <p style={{fontSize:15,color:C.sub,margin:0,lineHeight:1.5}}>Smartere matvalg. Lavere matbudsjett.</p>
       </div>
       {[
@@ -1194,7 +1208,7 @@ function Onboarding({onFerdig}){
   );
 
   if(steg===1) return (
-    <div style={{minHeight:"100vh",background:C.bg,padding:"36px 20px 120px",boxSizing:"border-box",fontFamily:"-apple-system,'Segoe UI',Roboto,sans-serif"}}>
+    <div style={{minHeight:"100vh",background:"#ffffff",padding:"36px 20px 120px",boxSizing:"border-box",fontFamily:"-apple-system,'Segoe UI',Roboto,sans-serif"}}>
       <Fremdrift/>
       <h2 style={{fontSize:22,fontWeight:800,margin:"0 0 6px",color:C.text}}>Hvilke kjeder handler du i?</h2>
       <p style={{fontSize:14,color:C.sub,margin:"0 0 20px",lineHeight:1.5}}>Velg kjedene som er aktuelle for deg. Dette kan endres når som helst under Profil → Mine butikker.</p>
@@ -1230,7 +1244,7 @@ function Onboarding({onFerdig}){
   );
 
   return (
-    <div style={{minHeight:"100vh",background:C.bg,padding:"36px 20px 120px",boxSizing:"border-box",fontFamily:"-apple-system,'Segoe UI',Roboto,sans-serif"}}>
+    <div style={{minHeight:"100vh",background:"#ffffff",padding:"36px 20px 120px",boxSizing:"border-box",fontFamily:"-apple-system,'Segoe UI',Roboto,sans-serif"}}>
       <Fremdrift/>
       <h2 style={{fontSize:22,fontWeight:800,margin:"0 0 6px",color:C.text}}>Velg dine butikker</h2>
       <p style={{fontSize:14,color:C.sub,margin:"0 0 16px",lineHeight:1.5}}>Handlekurven sammenligner kun butikkene du velger her. Du kan endre dette senere i innstillingene.</p>
@@ -1332,7 +1346,7 @@ function Onboarding({onFerdig}){
       })()}
       <div style={{position:"fixed",left:0,right:0,bottom:0,padding:"14px 20px 24px",background:"linear-gradient(transparent, #F6F7F9 30%)",display:"flex",flexDirection:"column",gap:8}}>
         <button style={{...sKnapp,opacity:butikker.length?1:0.4}} disabled={!butikker.length} onClick={()=>onFerdig(butikker)}>
-          Start å bruke Matpilot {butikker.length?`(${butikker.length} butikker)`:""}
+          Start å bruke Matsmart {butikker.length?`(${butikker.length} butikker)`:""}
         </button>
         <button style={lnk} onClick={()=>setSteg(1)}>← Tilbake til kjeder</button>
       </div>
@@ -1487,7 +1501,7 @@ function ProduktDetalj({vare, butikkIds, favoritt, premium, pv, onTilbake, onLeg
   };
 
   return (
-    <div style={{minHeight:"100vh",background:C.bg,paddingBottom:110,fontFamily:FONT}}>
+    <div style={{minHeight:"100vh",background:C.card2,paddingBottom:110,fontFamily:FONT}}>
       <div style={{background:C.card,borderBottom:`1px solid ${C.border}`,padding:"14px 16px",display:"flex",alignItems:"center",gap:10,position:"sticky",top:0,zIndex:5}}>
         <button onClick={onTilbake} style={{background:"none",border:"none",cursor:"pointer",padding:4,display:"flex"}}>{Ikon.tilbake()}</button>
         <span style={{fontSize:16,fontWeight:800,color:C.text,flex:1}}>Produkt</span>
@@ -1673,6 +1687,7 @@ function HjemSide({bruker, butikkIds, kurv, favoritter, lister, pv, premium, onA
 
   const valgteButikker = butikkIds.map(id=>SEED_BUTIKKER.find(b=>b.id===id)).filter(Boolean);
   const fornavn = bruker?.navn?.split(" ")[0] || null;
+  const estimertSpart = Math.round((bruker?.xp||0) * 0.8);
   const time = new Date().getHours();
   const hilsen = time < 10 ? "God morgen" : time < 12 ? "God formiddag" : time < 17 ? "Hei" : time < 21 ? "God kveld" : "Hei";
   const undertittel = antallIKurv > 0
@@ -1682,35 +1697,53 @@ function HjemSide({bruker, butikkIds, kurv, favoritter, lister, pv, premium, onA
     : "Klar til å handle smart?";
 
   return (
-    <div style={{padding:"16px 16px 0",paddingBottom:20}}>
+    <div style={{paddingBottom:90,fontFamily:FONT}}>
 
-      {/* ── Header ── */}
-      <div style={{marginBottom:20}}>
-        <div style={{fontSize:13,color:C.sub,marginBottom:2}}>{hilsen}{fornavn?`, ${fornavn}`:""} 👋</div>
-        <h1 style={{fontSize:26,fontWeight:800,margin:0,color:C.text,letterSpacing:-0.5}}>{undertittel}</h1>
+      {/* ── Mørk topp ── */}
+      <div style={{background:`linear-gradient(160deg, ${C.bg2} 0%, ${C.bg} 100%)`,padding:"52px 20px 32px"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:20}}>
+          <div>
+            <div style={{fontSize:13,color:"rgba(255,255,255,0.6)",marginBottom:3}}>{hilsen}{fornavn?`, ${fornavn}`:""} 👋</div>
+            <h1 style={{fontSize:26,fontWeight:800,margin:0,color:"#fff",letterSpacing:-0.5,lineHeight:1.2}}>{undertittel}</h1>
+          </div>
+          <button onClick={()=>setVisGuide(true)} style={{background:"rgba(255,255,255,0.15)",backdropFilter:"blur(8px)",border:"1px solid rgba(255,255,255,0.2)",borderRadius:20,cursor:"pointer",padding:"6px 12px",display:"flex",alignItems:"center",gap:4}}>
+            {Ikon.info()}
+            <span style={{fontSize:11.5,fontWeight:700,color:"rgba(255,255,255,0.8)"}}>Guide</span>
+          </button>
+        </div>
+
+        {/* Butikker */}
+        <div style={{background:"rgba(255,255,255,0.12)",backdropFilter:"blur(10px)",border:"1px solid rgba(255,255,255,0.2)",borderRadius:18,padding:"14px 16px",marginBottom:12}}>
+          <div style={{fontSize:11,fontWeight:800,color:"rgba(255,255,255,0.6)",textTransform:"uppercase",letterSpacing:0.8,marginBottom:10}}>DINE BUTIKKER</div>
+          {valgteButikker.length===0
+            ? <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                <span style={{fontSize:13,color:"rgba(255,255,255,0.5)"}}>Ingen butikker valgt ennå</span>
+                <button onClick={()=>onAapneSide({navn:"butikker"})} style={{background:C.blue,color:"#fff",border:"none",borderRadius:12,padding:"7px 16px",fontSize:13,fontWeight:700,cursor:"pointer"}}>Velg</button>
+              </div>
+            : <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
+                {valgteButikker.slice(0,4).map(b=>(
+                  <span key={b.id} style={{background:"rgba(255,255,255,0.15)",borderRadius:20,padding:"5px 12px",fontSize:12.5,fontWeight:600,color:"white",display:"flex",alignItems:"center",gap:5}}>
+                    <span style={{width:7,height:7,borderRadius:3.5,background:KJEDER[b.kjede]?.farge||"#fff",display:"inline-block",flexShrink:0}}/>
+                    {b.navn}
+                  </span>
+                ))}
+                {valgteButikker.length>4 && <span style={{background:"rgba(255,255,255,0.1)",borderRadius:20,padding:"5px 10px",fontSize:12,color:"rgba(255,255,255,0.6)"}}>+{valgteButikker.length-4}</span>}
+                <button onClick={()=>onAapneSide({navn:"butikker"})} style={{background:"none",border:"1px solid rgba(255,255,255,0.3)",borderRadius:20,padding:"5px 12px",fontSize:12.5,color:"rgba(255,255,255,0.6)",cursor:"pointer"}}>Endre</button>
+              </div>
+          }
+        </div>
+
+        {/* Estimert spart */}
+        {estimertSpart>0 && (
+          <div style={{background:"rgba(255,255,255,0.12)",backdropFilter:"blur(10px)",border:"1px solid rgba(255,255,255,0.2)",borderRadius:18,padding:"14px 16px"}}>
+            <div style={{fontSize:11,fontWeight:800,color:"rgba(255,255,255,0.6)",textTransform:"uppercase",letterSpacing:0.8,marginBottom:4}}>ESTIMERT SPART DENNE MÅNEDEN</div>
+            <div style={{fontSize:34,fontWeight:800,color:"#fff"}}>~{estimertSpart} kr</div>
+          </div>
+        )}
       </div>
 
-      {/* ── Valgte butikker ── */}
-      <div style={{...sCard,padding:"12px 16px",marginBottom:14}}>
-        <div style={{fontSize:12,fontWeight:800,color:C.sub,textTransform:"uppercase",letterSpacing:0.5,marginBottom:8}}>Dine butikker</div>
-        {valgteButikker.length===0
-          ? <div style={{textAlign:"center",padding:"8px 0"}}>
-              <div style={{fontSize:28,marginBottom:8}}>🏪</div>
-              <div style={{fontSize:15,fontWeight:800,color:C.text,marginBottom:6}}>Ingen butikker valgt ennå</div>
-              <div style={{fontSize:13,color:C.sub,marginBottom:14,lineHeight:1.5}}>Velg butikkene du handler i, så kan appen sammenligne priser for deg.</div>
-              <button onClick={()=>onAapneSide({navn:"butikker"})} style={{...sKnapp,width:"auto",padding:"10px 24px",display:"inline-block"}}>Velg mine butikker</button>
-            </div>
-          : <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
-              {valgteButikker.map(b=>(
-                <div key={b.id} style={{display:"flex",alignItems:"center",gap:5,background:C.bg,borderRadius:20,padding:"5px 10px"}}>
-                  <div style={{width:8,height:8,borderRadius:4,background:KJEDER[b.kjede]?.farge||C.sub,flexShrink:0}}/>
-                  <span style={{fontSize:12.5,fontWeight:600,color:C.text}}>{b.navn}</span>
-                </div>
-              ))}
-              <button onClick={()=>onAapneSide({navn:"butikker"})} style={{background:"none",border:`1px dashed ${C.border}`,borderRadius:20,padding:"5px 10px",fontSize:12.5,color:C.sub,cursor:"pointer"}}>Endre</button>
-            </div>
-        }
-      </div>
+      {/* ── Hvit bunn ── */}
+      <div style={{background:C.card2,borderRadius:"24px 24px 0 0",marginTop:-16,paddingTop:20,minHeight:"60vh",padding:"20px 16px 0"}}>
 
       {/* ── Dagens spare-tips ── */}
       {(()=>{
@@ -1726,7 +1759,7 @@ function HjemSide({bruker, butikkIds, kurv, favoritter, lister, pv, premium, onA
         ];
         const dagensIndex = new Date().getDate() % TIPS.length;
         return (
-          <div style={{...sCard,padding:"14px 16px",marginBottom:16,borderLeft:`4px solid ${C.blue}`,background:C.blueLys}}>
+          <div style={{...sCard,padding:"14px 16px",marginBottom:16,borderLeft:`4px solid ${C.blue}`}}>
             <div style={{fontSize:11,fontWeight:800,color:C.blue,textTransform:"uppercase",letterSpacing:0.5,marginBottom:4}}>💡 Dagens spare-tips</div>
             <div style={{fontSize:13.5,color:C.text,lineHeight:1.55}}>{TIPS[dagensIndex]}</div>
           </div>
@@ -1740,10 +1773,10 @@ function HjemSide({bruker, butikkIds, kurv, favoritter, lister, pv, premium, onA
           </div>
           <div style={{display:"flex",gap:10,overflowX:"auto",paddingBottom:4}}>
             {ektePrisfall.slice(0,8).map((p,i)=>(
-              <div key={p.ean||i} style={{...sCard,minWidth:130,maxWidth:150,padding:12,flexShrink:0,background:C.okLys,border:`1px solid ${C.ok}`}}>
+              <div key={p.ean||i} style={{...sCard,minWidth:130,maxWidth:150,padding:12,flexShrink:0}}>
                 {p.bilde
                   ? <img src={p.bilde} style={{width:44,height:44,objectFit:"contain",margin:"0 auto 8px",display:"block"}} onError={e=>e.target.style.display="none"}/>
-                  : <div style={{width:44,height:44,background:C.bg,borderRadius:8,margin:"0 auto 8px",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20}}>🛒</div>
+                  : <div style={{width:44,height:44,background:C.card2,borderRadius:8,margin:"0 auto 8px",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20}}>🛒</div>
                 }
                 <div style={{fontSize:12.5,fontWeight:700,color:C.text,lineHeight:1.3,marginBottom:4,overflow:"hidden",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical"}}>{p.navn}</div>
                 <div style={{fontSize:15,fontWeight:800,color:C.text}}>{p.prisNaa?.toFixed(2).replace(".",",")} kr</div>
@@ -1825,6 +1858,7 @@ function HjemSide({bruker, butikkIds, kurv, favoritter, lister, pv, premium, onA
         </div>
       )}
 
+      </div>{/* slutt hvit bunn */}
     </div>
   );
 }
@@ -2367,7 +2401,7 @@ function KunnskapSide({onAapneArtikkel}){
 }
 function ArtikkelVisning({artikkel, onTilbake}){
   return (
-    <div style={{minHeight:"100vh",background:C.bg,paddingBottom:40,fontFamily:"-apple-system,'Segoe UI',Roboto,sans-serif"}}>
+    <div style={{minHeight:"100vh",background:C.card2,paddingBottom:40,fontFamily:"-apple-system,'Segoe UI',Roboto,sans-serif"}}>
       <div style={{background:C.card,borderBottom:`1px solid ${C.border}`,padding:"14px 16px",display:"flex",alignItems:"center",gap:10,position:"sticky",top:0,zIndex:5}}>
         <button onClick={onTilbake} style={{background:"none",border:"none",cursor:"pointer",padding:4,display:"flex"}}>{Ikon.tilbake()}</button>
         <span style={{fontSize:13,fontWeight:800,color:C.sub,textTransform:"uppercase",letterSpacing:0.4}}>{artikkel.emne}</span>
@@ -2414,7 +2448,7 @@ function InfoBoks({tekst}){
 function FavoritterSide({favoritter, butikkIds, pv, onTilbake, onAapne, onLeggTil, onFavoritt, onLeggAlleIKurv}){
   const varer = VARER.filter(v=>favoritter.includes(v.id));
   return (
-    <div style={{minHeight:"100vh",background:C.bg,paddingBottom:varer.length>0?90:40,fontFamily:FONT}}>
+    <div style={{minHeight:"100vh",background:C.card2,paddingBottom:varer.length>0?90:40,fontFamily:FONT}}>
       <UnderHeader tittel="Favoritter" onTilbake={onTilbake}/>
       <div style={{padding:16,display:"flex",flexDirection:"column",gap:10}}>
         {varer.length===0 ? (
@@ -2494,7 +2528,7 @@ function ListeVelgerModal({vare, lister, onVelg, onNy, onLukk}){
 }
 function ListerSide({lister, onTilbake, onAapneListe, onNyListe}){
   return (
-    <div style={{minHeight:"100vh",background:C.bg,paddingBottom:40,fontFamily:FONT}}>
+    <div style={{minHeight:"100vh",background:C.card2,paddingBottom:40,fontFamily:FONT}}>
       <UnderHeader tittel="Mine lister" onTilbake={onTilbake} hoyre={<button style={lnk} onClick={onNyListe}>+ Ny liste</button>}/>
       <div style={{padding:16,display:"flex",flexDirection:"column",gap:10}}>
         {lister.length===0 ? (
@@ -2540,7 +2574,7 @@ function ListeDetalj({liste, butikkIds, onTilbake, onEndreNavn, onSlett, onFjern
       varer.forEach(v=>linjer.push(v));
     });
     linjer.push(`\nTotalt: ca. ${total.toFixed(0)} kr`);
-    linjer.push(`\nLaget med Matpilot`);
+    linjer.push(`\nLaget med Matsmart`);
     const tekst = linjer.join("\n");
     if(navigator.share){ navigator.share({title:liste.navn,text:tekst}).catch(()=>{}); }
     else if(navigator.clipboard){ navigator.clipboard.writeText(tekst).then(()=>alert("Kopiert til utklippstavlen!")); }
@@ -2548,7 +2582,7 @@ function ListeDetalj({liste, butikkIds, onTilbake, onEndreNavn, onSlett, onFjern
   };
 
   return (
-    <div style={{minHeight:"100vh",background:C.bg,paddingBottom:110,fontFamily:FONT}}>
+    <div style={{minHeight:"100vh",background:C.card2,paddingBottom:110,fontFamily:FONT}}>
       <UnderHeader tittel={liste.navn} onTilbake={onTilbake}/>
       <div style={{padding:16}}>
 
@@ -2626,7 +2660,7 @@ function MineButikkerSide({butikkIds, onLagre, onTilbake}){
   const [valg,setValg] = useState(butikkIds);
   const toggle = (id)=>setValg(p=>p.includes(id)?p.filter(x=>x!==id):[...p,id]);
   return (
-    <div style={{minHeight:"100vh",background:C.bg,paddingBottom:110,fontFamily:FONT}}>
+    <div style={{minHeight:"100vh",background:C.card2,paddingBottom:110,fontFamily:FONT}}>
       <UnderHeader tittel="Mine butikker" onTilbake={onTilbake}/>
       <div style={{padding:16}}>
         <p style={{fontSize:13.5,color:C.sub,margin:"0 0 16px",lineHeight:1.5}}>Velg butikkene som er aktuelle for deg. Handlekurv-sammenligningen bruker kun disse.</p>
@@ -2668,64 +2702,61 @@ function MineButikkerSide({butikkIds, onLagre, onTilbake}){
 }
 
 /* ════ KONTO (simulert autentisering) ════ */
-function KontoSide({onTilbake, onLoggInn, onRegistrer, onNyttPassord, finnesEpost}){
+function KontoSide({onTilbake, onLoggInn, onRegistrer, onSendTilbakestilling}){
   const [modus,setModus] = useState("inn"); // inn | ny | glemt
   const [navn,setNavn] = useState(""); const [epost,setEpost] = useState(""); const [passord,setPassord] = useState("");
   const [feil,setFeil] = useState(null); const [info,setInfo] = useState(null);
-  const [glemtSteg,setGlemtSteg] = useState(0); const [kode,setKode] = useState(""); const [riktigKode,setRiktigKode] = useState(null);
+  const [laster,setLaster] = useState(false);
 
-  const bytt = (m)=>{ setModus(m); setFeil(null); setInfo(null); setGlemtSteg(0); setKode(""); setPassord(""); };
+  const bytt = (m)=>{ setModus(m); setFeil(null); setInfo(null); setPassord(""); };
   const epostOk = (e)=>e.includes("@") && e.includes(".");
 
-  const sendInn = ()=>{
-    setFeil(null);
+  const sendInn = async ()=>{
+    setFeil(null); setInfo(null);
+    if(laster) return;
     if(modus==="inn"){
       if(!epostOk(epost)) return setFeil("Skriv inn en gyldig e-postadresse.");
-      const f = onLoggInn(epost.trim().toLowerCase(), passord);
+      if(!passord) return setFeil("Skriv inn passordet ditt.");
+      setLaster(true);
+      const f = await onLoggInn(epost.trim().toLowerCase(), passord);
+      setLaster(false);
       if(f) setFeil(f);
     } else if(modus==="ny"){
       if(!navn.trim()) return setFeil("Skriv inn navnet ditt.");
       if(!epostOk(epost)) return setFeil("Skriv inn en gyldig e-postadresse.");
       if(passord.length<6) return setFeil("Passordet må ha minst 6 tegn.");
-      const f = onRegistrer(navn.trim(), epost.trim().toLowerCase(), passord);
+      setLaster(true);
+      const f = await onRegistrer(navn.trim(), epost.trim().toLowerCase(), passord);
+      setLaster(false);
       if(f) setFeil(f);
     } else if(modus==="glemt"){
-      if(glemtSteg===0){
-        if(!epostOk(epost)) return setFeil("Skriv inn en gyldig e-postadresse.");
-        if(!finnesEpost(epost.trim().toLowerCase())) return setFeil("Fant ingen konto med denne e-postadressen.");
-        const k = String(100000 + (hash(epost.trim().toLowerCase())%900000));
-        setRiktigKode(k);
-        setInfo(`Demoversjon: tilbakestillingskoden din er ${k}. I en lansert app sendes denne på e-post.`);
-        setGlemtSteg(1);
-      } else {
-        if(kode!==riktigKode) return setFeil("Koden stemmer ikke. Sjekk og prøv igjen.");
-        if(passord.length<6) return setFeil("Det nye passordet må ha minst 6 tegn.");
-        onNyttPassord(epost.trim().toLowerCase(), passord);
-        bytt("inn");
-        setInfo("Passordet er oppdatert. Logg inn med det nye passordet.");
-      }
+      if(!epostOk(epost)) return setFeil("Skriv inn en gyldig e-postadresse.");
+      setLaster(true);
+      const f = await onSendTilbakestilling(epost.trim().toLowerCase());
+      setLaster(false);
+      if(f) setFeil(f);
+      else setInfo("Vi har sendt deg en e-post med en lenke for å tilbakestille passordet. Sjekk innboksen din (og evt. spam-mappen).");
     }
   };
 
   return (
-    <div style={{minHeight:"100vh",background:C.bg,fontFamily:FONT}}>
+    <div style={{minHeight:"100vh",background:C.card2,fontFamily:FONT}}>
       <UnderHeader tittel={modus==="inn"?"Logg inn":modus==="ny"?"Opprett konto":"Tilbakestill passord"} onTilbake={onTilbake}/>
       <div style={{padding:"24px 20px"}}>
         <FeilBoks tekst={feil}/>
         <InfoBoks tekst={info}/>
         {modus==="ny" && <Felt label="Navn" verdi={navn} onEndre={setNavn} plassholder="Fornavn Etternavn"/>}
-        {(modus!=="glemt" || glemtSteg===0) && <Felt label="E-post" type="email" verdi={epost} onEndre={setEpost} plassholder="deg@eksempel.no"/>}
-        {modus==="glemt" && glemtSteg===1 && <Felt label="Tilbakestillingskode" verdi={kode} onEndre={setKode} plassholder="6 siffer"/>}
-        {(modus!=="glemt" || glemtSteg===1) && <Felt label={modus==="glemt"?"Nytt passord":"Passord"} type="password" verdi={passord} onEndre={setPassord} plassholder="Minst 6 tegn"/>}
-        <button style={{...sKnapp,marginTop:6}} onClick={sendInn}>
-          {modus==="inn"?"Logg inn":modus==="ny"?"Opprett konto":glemtSteg===0?"Send tilbakestillingskode":"Lagre nytt passord"}
+        <Felt label="E-post" type="email" verdi={epost} onEndre={setEpost} plassholder="deg@eksempel.no"/>
+        {modus!=="glemt" && <Felt label="Passord" type="password" verdi={passord} onEndre={setPassord} plassholder="Minst 6 tegn"/>}
+        <button style={{...sKnapp,marginTop:6,opacity:laster?0.6:1}} onClick={sendInn} disabled={laster}>
+          {laster ? "Vent litt …" : modus==="inn"?"Logg inn":modus==="ny"?"Opprett konto":"Send tilbakestillingslenke"}
         </button>
         <div style={{display:"flex",flexDirection:"column",gap:12,alignItems:"center",marginTop:22}}>
           {modus!=="inn" && <button style={lnk} onClick={()=>bytt("inn")}>Har du konto? Logg inn</button>}
           {modus!=="ny" && <button style={lnk} onClick={()=>bytt("ny")}>Ny her? Opprett konto</button>}
           {modus==="inn" && <button style={lnk} onClick={()=>bytt("glemt")}>Glemt passordet?</button>}
         </div>
-        <p style={{fontSize:12,color:C.sub,textAlign:"center",marginTop:26,lineHeight:1.5}}>Dette er en demoversjon: kontoen lagres lokalt på denne enheten. I en lansert app håndteres innlogging av en sikker server.</p>
+        <p style={{fontSize:12,color:C.sub,textAlign:"center",marginTop:26,lineHeight:1.5}}>Kontoen din er sikret og lagret trygt. Du kan logge inn fra andre enheter med samme e-post og passord.</p>
       </div>
     </div>
   );
@@ -2735,7 +2766,7 @@ function ProfilRedigerSide({bruker, onLagre, onTilbake}){
   const [epost,setEpost] = useState(bruker.epost);
   const [feil,setFeil] = useState(null);
   return (
-    <div style={{minHeight:"100vh",background:C.bg,fontFamily:FONT}}>
+    <div style={{minHeight:"100vh",background:C.card2,fontFamily:FONT}}>
       <UnderHeader tittel="Rediger profil" onTilbake={onTilbake}/>
       <div style={{padding:"24px 20px"}}>
         <FeilBoks tekst={feil}/>
@@ -2846,7 +2877,7 @@ function TilbudsSide({butikkIds, rapporter, pv, onAapne, onLeggTil, onTilbake}){
     : [...rapporterteTilbud.filter(r=>!r.utgaatt), ...simulerteTilbud];
 
   return (
-    <div style={{minHeight:"100vh",background:C.bg,paddingBottom:40,fontFamily:FONT}}>
+    <div style={{minHeight:"100vh",background:C.card2,paddingBottom:40,fontFamily:FONT}}>
       <UnderHeader tittel="Tilbud" onTilbake={onTilbake}/>
       <div style={{padding:16}}>
         <div style={{display:"flex",gap:8,marginBottom:14}}>
@@ -2943,7 +2974,7 @@ function BidragSide({spiller, rapporter, bekreftelser, onTilbake}){
     ["XP totalt", spiller.xp],
   ];
   return (
-    <div style={{minHeight:"100vh",background:C.bg,paddingBottom:40,fontFamily:FONT}}>
+    <div style={{minHeight:"100vh",background:C.card2,paddingBottom:40,fontFamily:FONT}}>
       <UnderHeader tittel="Mine bidrag" onTilbake={onTilbake}/>
       <div style={{padding:16}}>
         <div style={{...sCard,padding:20,marginBottom:14,textAlign:"center"}}>
@@ -3036,13 +3067,13 @@ const PREMIUM_FUNKSJONER = [
   {ikon:"🥦", tittel:"NOVA-merking og alternativer", beskrivelse:"Se prosesseringsgrad og finn sunnere og billigere alternativer.", premium:false},
 ];
 
-function PremiumSide({premium, rabattKlar, spiller, onKjop, onSiOpp, onTilbake}){
+function PremiumSide({premium, rabattKlar, spiller, onKjop, onSiOpp, onGjenopprett, onTilbake}){
   const aktiv = premium.status==="gratis" || premium.status==="betalt";
   const nivaa = xpTilNivaa(spiller?.xp||0);
   const xpTilNivaa10 = Math.max(0, xpForNivaa(10) - (spiller?.xp||0));
 
   return (
-    <div style={{minHeight:"100vh",background:C.bg,paddingBottom:40,fontFamily:FONT}}>
+    <div style={{minHeight:"100vh",background:C.card2,paddingBottom:40,fontFamily:FONT}}>
       <UnderHeader tittel="Premium" onTilbake={onTilbake}/>
       <div style={{padding:16}}>
 
@@ -3050,7 +3081,7 @@ function PremiumSide({premium, rabattKlar, spiller, onKjop, onSiOpp, onTilbake})
         {!aktiv && (
           <div style={{background:"linear-gradient(135deg,#1a1a2e 0%,#16213e 60%,#0f3460 100%)",borderRadius:20,padding:24,marginBottom:16,textAlign:"center",color:"#fff"}}>
             <div style={{fontSize:36,marginBottom:8}}>👑</div>
-            <h2 style={{fontSize:22,fontWeight:800,margin:"0 0 6px",color:"#fff"}}>Matpilot Premium</h2>
+            <h2 style={{fontSize:22,fontWeight:800,margin:"0 0 6px",color:"#fff"}}>Matsmart Premium</h2>
             <p style={{fontSize:14,color:"rgba(255,255,255,0.75)",margin:"0 0 20px",lineHeight:1.55}}>
               Få fullt utbytte av appen. Spis sunnere, spar mer og hold deg oppdatert på prisene som betyr noe for deg.
             </p>
@@ -3107,7 +3138,7 @@ function PremiumSide({premium, rabattKlar, spiller, onKjop, onSiOpp, onTilbake})
                   Si opp abonnementet
                 </button>
               )}
-              <button style={{...sKnappSek,width:"auto",flex:1,fontSize:13}} onClick={()=>{}}>
+              <button style={{...sKnappSek,width:"auto",flex:1,fontSize:13}} onClick={onGjenopprett}>
                 Gjenopprett kjøp
               </button>
             </div>
@@ -3218,7 +3249,7 @@ function BelonningerSide({spiller, belonningStatus, premium, onAktiverRabatt, on
     );
   };
   return (
-    <div style={{minHeight:"100vh",background:C.bg,paddingBottom:40,fontFamily:FONT}}>
+    <div style={{minHeight:"100vh",background:C.card2,paddingBottom:40,fontFamily:FONT}}>
       <UnderHeader tittel="Belønninger" onTilbake={onTilbake}/>
       <div style={{padding:16}}>
         <p style={{fontSize:13.5,color:C.sub,margin:"0 0 14px",lineHeight:1.5}}>Bidra med priser og bekreftelser for å nå nye nivåer og låse opp belønninger.</p>
@@ -3232,7 +3263,7 @@ function BelonningerSide({spiller, belonningStatus, premium, onAktiverRabatt, on
 function VarslerSide({varsler, onTilbake, onLes}){
   useEffect(()=>{ onLes(); },[]);
   return (
-    <div style={{minHeight:"100vh",background:C.bg,paddingBottom:40,fontFamily:FONT}}>
+    <div style={{minHeight:"100vh",background:C.card2,paddingBottom:40,fontFamily:FONT}}>
       <UnderHeader tittel="Varsler" onTilbake={onTilbake}/>
       <div style={{padding:16,display:"flex",flexDirection:"column",gap:10}}>
         {varsler.length===0 ? (
@@ -3259,7 +3290,7 @@ function ForeslaaProduktSide({butikkIds, onSend, onTilbake}){
   const s=(k)=>(v)=>setF(p=>({...p,[k]:v}));
   const kats = KAT.filter(k=>!["favoritter","tilbud"].includes(k.id));
   return (
-    <div style={{minHeight:"100vh",background:C.bg,paddingBottom:40,fontFamily:FONT}}>
+    <div style={{minHeight:"100vh",background:C.card2,paddingBottom:40,fontFamily:FONT}}>
       <UnderHeader tittel="Foreslå nytt produkt" onTilbake={onTilbake}/>
       <div style={{padding:"20px 16px"}}>
         <p style={{fontSize:13,color:C.sub,margin:"0 0 16px",lineHeight:1.5}}>Forslaget publiseres ikke automatisk – det går til en godkjenningskø hos administrator. Godkjente forslag gir +25 XP.</p>
@@ -3300,7 +3331,7 @@ function ForeslaaButikkSide({onSend, onTilbake}){
   const dup = finnDuplikatButikker(f.navn, f.adresse);
   const gyldig = f.navn.trim() && f.adresse.trim() && f.sted.trim();
   return (
-    <div style={{minHeight:"100vh",background:C.bg,paddingBottom:40,fontFamily:FONT}}>
+    <div style={{minHeight:"100vh",background:C.card2,paddingBottom:40,fontFamily:FONT}}>
       <UnderHeader tittel="Foreslå ny butikk" onTilbake={onTilbake}/>
       <div style={{padding:"20px 16px"}}>
         <p style={{fontSize:13,color:C.sub,margin:"0 0 16px",lineHeight:1.5}}>Butikken publiseres etter godkjenning, og kan da brukes til prisrapportering, som foretrukket butikk og i handlekurv-sammenligningen. Godkjente forslag gir +25 XP.</p>
@@ -3344,7 +3375,7 @@ function SupportSide({saker, onNySak, onAapneSak, onTilbake}){
   const [tekst,setTekst] = useState("");
   const [vedlegg,setVedlegg] = useState(null);
   return (
-    <div style={{minHeight:"100vh",background:C.bg,paddingBottom:40,fontFamily:FONT}}>
+    <div style={{minHeight:"100vh",background:C.card2,paddingBottom:40,fontFamily:FONT}}>
       <UnderHeader tittel="Support" onTilbake={onTilbake}/>
       <div style={{padding:16}}>
         <h3 style={{fontSize:14,fontWeight:800,margin:"0 0 8px",color:C.text}}>Ofte stilte spørsmål</h3>
@@ -3408,7 +3439,7 @@ function SakTraadSide({sak, erAdmin, onSvar, onStatusEndre, onTilbake}){
   const [tekst,setTekst] = useState("");
   const laast = sak.status==="Lukket" && !erAdmin;
   return (
-    <div style={{minHeight:"100vh",background:C.bg,paddingBottom:120,fontFamily:FONT}}>
+    <div style={{minHeight:"100vh",background:C.card2,paddingBottom:120,fontFamily:FONT}}>
       <UnderHeader tittel={sak.kategori} onTilbake={onTilbake} hoyre={<StatusBadge status={sak.status}/>}/>
       <div style={{padding:16}}>
         {erAdmin && (
@@ -3458,7 +3489,7 @@ function AdminSide({tall, gaaTil, onTilbake}){
     ["Åpne saker", tall.saker, "adminSupport"],
   ];
   return (
-    <div style={{minHeight:"100vh",background:C.bg,paddingBottom:40,fontFamily:FONT}}>
+    <div style={{minHeight:"100vh",background:C.card2,paddingBottom:40,fontFamily:FONT}}>
       <UnderHeader tittel="Administrasjonspanel" onTilbake={onTilbake}/>
       <div style={{padding:16}}>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:16}}>
@@ -3562,7 +3593,7 @@ function AdminDatakvalitetSide({rapporter, onTilbake}){
     : [];
 
   return (
-    <div style={{minHeight:"100vh",background:C.bg,paddingBottom:40,fontFamily:FONT}}>
+    <div style={{minHeight:"100vh",background:C.card2,paddingBottom:40,fontFamily:FONT}}>
       <UnderHeader tittel="Datakvalitet" onTilbake={onTilbake}/>
       <div style={{padding:16}}>
         {/* Filter-tabs */}
@@ -3685,7 +3716,7 @@ function AdminProdukterSide({pv, rapporter, onSettPris, onSlettPris, onSlettProd
   const velg = (id)=>{ setAapen(aapen===id?null:id); setNyPris(""); setBildeUrl(""); setBekreftSlett(false); };
 
   return (
-    <div style={{minHeight:"100vh",background:C.bg,paddingBottom:40,fontFamily:FONT}}>
+    <div style={{minHeight:"100vh",background:C.card2,paddingBottom:40,fontFamily:FONT}}>
       <UnderHeader tittel="Produkter og priser" onTilbake={onTilbake}/>
       <div style={{padding:16}}>
         <input style={{...sInput,marginBottom:10}} placeholder="Søk produkt …" value={sok} onChange={e=>setSok(e.target.value)}/>
@@ -3756,7 +3787,7 @@ function AdminRapporterSide({rapporter, onGodkjenn, onAvvis, onTilbake}){
   const behandlet = rapporter.filter(r=>r.status!=="venter");
 
   return (
-    <div style={{minHeight:"100vh",background:C.bg,paddingBottom:40,fontFamily:FONT}}>
+    <div style={{minHeight:"100vh",background:C.card2,paddingBottom:40,fontFamily:FONT}}>
       <UnderHeader tittel={`Prisrapporter (${ventende.length} venter)`} onTilbake={onTilbake}/>
 
       {/* Fullskjerm-bilde modal */}
@@ -3866,7 +3897,7 @@ function AdminProduktForslagSide({forslag, onGodkjenn, onAvvis, onTilbake}){
   const kats = KAT.filter(k=>!["favoritter","tilbud"].includes(k.id));
   const aapne = (f)=>{ setAapen(f.id); setRed({navn:f.navn,prod:f.prod,kat:f.kat,nova:"",pris:f.pris,kcal:f.kcal,protein:f.protein}); };
   return (
-    <div style={{minHeight:"100vh",background:C.bg,paddingBottom:40,fontFamily:FONT}}>
+    <div style={{minHeight:"100vh",background:C.card2,paddingBottom:40,fontFamily:FONT}}>
       <UnderHeader tittel="Produktforslag" onTilbake={onTilbake}/>
       <div style={{padding:16,display:"flex",flexDirection:"column",gap:10}}>
         {ventende.length===0 && <div style={{...sCard,padding:24,textAlign:"center",fontSize:13.5,color:C.sub}}>Ingen produktforslag venter. 🎉</div>}
@@ -3931,7 +3962,7 @@ function AdminButikkForslagSide({forslag, onGodkjenn, onAvvis, onSlaaSammen, onT
   const ventende = forslag.filter(f=>f.status==="venter");
   const behandlet = forslag.filter(f=>f.status!=="venter");
   return (
-    <div style={{minHeight:"100vh",background:C.bg,paddingBottom:40,fontFamily:FONT}}>
+    <div style={{minHeight:"100vh",background:C.card2,paddingBottom:40,fontFamily:FONT}}>
       <UnderHeader tittel="Butikkforslag" onTilbake={onTilbake}/>
       <div style={{padding:16,display:"flex",flexDirection:"column",gap:10}}>
         {ventende.length===0 && <div style={{...sCard,padding:24,textAlign:"center",fontSize:13.5,color:C.sub}}>Ingen butikkforslag venter. 🎉</div>}
@@ -4002,7 +4033,7 @@ function AdminSupportSide({saker, onAapne, onTilbake}){
   if(filter!=="alle") liste = liste.filter(s=>s.status===filter);
   if(sok.trim()){ const q=sok.trim().toLowerCase(); liste = liste.filter(s=>s.kategori.toLowerCase().includes(q)||s.meldinger.some(m=>m.tekst.toLowerCase().includes(q))); }
   return (
-    <div style={{minHeight:"100vh",background:C.bg,paddingBottom:40,fontFamily:FONT}}>
+    <div style={{minHeight:"100vh",background:C.card2,paddingBottom:40,fontFamily:FONT}}>
       <UnderHeader tittel="Supportinnboks" onTilbake={onTilbake}/>
       <div style={{padding:16}}>
         <input style={{...sInput,marginBottom:10}} placeholder="Søk i saker …" value={sok} onChange={e=>setSok(e.target.value)}/>
@@ -4033,7 +4064,8 @@ function AdminRefusjonSide({brukere, premium, betalinger, refusjoner, onUtfor, o
   const [valgt,setValgt] = useState(null);
   const [belop,setBelop] = useState("");
   const [grunn,setGrunn] = useState("");
-  const treff = sok.trim() ? brukere.filter(b=>b.navn.toLowerCase().includes(sok.toLowerCase())||b.epost.toLowerCase().includes(sok.toLowerCase())) : brukere;
+  const brukerListe = brukere || [];
+  const treff = sok.trim() ? brukerListe.filter(b=>b.navn.toLowerCase().includes(sok.toLowerCase())||b.epost.toLowerCase().includes(sok.toLowerCase())) : brukerListe;
   const premiumTekst = premium.status==="betalt" ? `Betalt · ${premium.pris} kr/mnd · fornyes ${dagTekst(premium.fornyes)}`
     : premium.status==="gratis" ? `Gratisperiode til ${dagTekst(premium.sluttdato)}` : "Ikke aktivt abonnement";
   const utfor = (type)=>{
@@ -4044,11 +4076,14 @@ function AdminRefusjonSide({brukere, premium, betalinger, refusjoner, onUtfor, o
     setBelop(""); setGrunn("");
   };
   return (
-    <div style={{minHeight:"100vh",background:C.bg,paddingBottom:40,fontFamily:FONT}}>
+    <div style={{minHeight:"100vh",background:C.card2,paddingBottom:40,fontFamily:FONT}}>
       <UnderHeader tittel="Refusjoner og abonnement" onTilbake={onTilbake}/>
       <div style={{padding:16}}>
+        <div style={{...sCard,padding:14,marginBottom:14,background:C.warnLys,fontSize:12.5,color:C.text,lineHeight:1.55}}>
+          ℹ️ Brukerkontoer håndteres nå av Supabase. For å administrere brukere (refusjoner, abonnement), bruk Supabase-dashbordet eller koble til en admin-API senere.
+        </div>
         <input style={{...sInput,marginBottom:10}} placeholder="Søk bruker (navn eller e-post) …" value={sok} onChange={e=>{setSok(e.target.value);setValgt(null);}}/>
-        {brukere.length===0 && <div style={{...sCard,padding:20,textAlign:"center",fontSize:13,color:C.sub,marginBottom:12}}>Ingen brukerkontoer er opprettet ennå.</div>}
+        {brukerListe.length===0 && <div style={{...sCard,padding:20,textAlign:"center",fontSize:13,color:C.sub,marginBottom:12}}>Ingen brukerkontoer er koblet til ennå.</div>}
         {!valgt && treff.map(b=>(
           <button key={b.id} onClick={()=>setValgt(b)} style={{...sCard,padding:"12px 14px",display:"flex",alignItems:"center",gap:10,cursor:"pointer",textAlign:"left",width:"100%",boxSizing:"border-box",marginBottom:8}}>
             <div style={{flex:1}}>
@@ -4133,7 +4168,7 @@ const BADGES = [
   {id:"bidragsyter", ikon:"🌟", tittel:"Bidragsyter",    beskrivelse:"Bidratt til fellesskapet",krav:(s)=>s.tillit>=60},
 ];
 
-function ProfilSide({bruker, butikkIds, favoritter, lister, spiller, belonningStatus, premium, varsler, saker, erAdmin, adminTall, onToggleAdmin, gaaTil, onLoggUt, onNullstill, rapporter, bekreftelser}){
+function ProfilSide({bruker, butikkIds, favoritter, lister, spiller, belonningStatus, premium, varsler, saker, erAdmin, adminTall, gaaTil, onLoggUt, onNullstill, rapporter, bekreftelser}){
   const nivaa = xpTilNivaa(spiller.xp);
   const xpFra = xpForNivaa(nivaa), xpTil = xpForNivaa(nivaa+1);
   const xpPct = Math.min(100, Math.round((spiller.xp-xpFra)/(xpTil-xpFra)*100));
@@ -4279,18 +4314,13 @@ function ProfilSide({bruker, butikkIds, favoritter, lister, spiller, belonningSt
         <MenyRad ikon="🏬" tittel="Foreslå ny butikk" detalj="+25 XP" onClick={()=>gaaTil({navn:"foreslaaButikk"})}/>
         <MenyRad ikon="💬" tittel="Support" detalj={saker.filter(s=>s.status!=="Lukket"&&s.status!=="Løst").length||null} onClick={()=>gaaTil({navn:"support"})} siste/>
       </div>
-      <div style={{...sCard,padding:"4px 16px",marginBottom:14}}>
-        <div style={{display:"flex",alignItems:"center",gap:12,padding:"13px 2px",borderBottom:erAdmin?`1px solid ${C.border}`:"none"}}>
-          <span style={{fontSize:19,width:26,textAlign:"center"}}>🛠️</span>
-          <span style={{fontSize:14.5,fontWeight:700,color:C.text,flex:1}}>Administratormodus</span>
-          <button onClick={onToggleAdmin} style={{width:46,height:26,borderRadius:13,border:"none",cursor:"pointer",background:erAdmin?C.blue:C.border,position:"relative",transition:"background .15s"}}>
-            <span style={{position:"absolute",top:3,left:erAdmin?23:3,width:20,height:20,borderRadius:10,background:"#fff",transition:"left .15s",boxShadow:"0 1px 3px rgba(0,0,0,0.25)"}}/>
-          </button>
+      {erAdmin && (
+        <div style={{...sCard,padding:"4px 16px",marginBottom:14}}>
+          <MenyRad ikon="🗂️" tittel="Administrasjonspanel" detalj={adminTall>0?`${adminTall} i kø`:null} onClick={()=>gaaTil({navn:"admin"})} siste/>
         </div>
-        {erAdmin && <MenyRad ikon="🗂️" tittel="Administrasjonspanel" detalj={adminTall>0?`${adminTall} i kø`:null} onClick={()=>gaaTil({navn:"admin"})} siste/>}
-      </div>
+      )}
       <div style={{...sCard,padding:18,marginBottom:14}}>
-        <h3 style={{fontSize:14,fontWeight:800,margin:"0 0 6px",color:C.text}}>Om Matpilot</h3>
+        <h3 style={{fontSize:14,fontWeight:800,margin:"0 0 6px",color:C.text}}>Om Matsmart</h3>
         <p style={{fontSize:13,color:C.sub,margin:0,lineHeight:1.6}}>Demoversjon – data lagres lokalt på denne enheten. Administratormodus er åpen for testing.</p>
         <button style={{...lnk,marginTop:12}} onClick={onNullstill}>Nullstill app (kjør onboarding på nytt)</button>
       </div>
@@ -4333,8 +4363,8 @@ function App(){
   const [favoritter,setFavoritter] = useState([]);
   const [kurv,setKurv] = useState({});
   const [lister,setLister] = useState([]);
-  const [brukere,setBrukere] = useState([]);
-  const [aktivBrukerId,setAktivBrukerId] = useState(null);
+  const [authBruker,setAuthBruker] = useState(null); // Supabase-bruker {id,email,user_metadata:{navn}} eller null
+  const [authLastet,setAuthLastet] = useState(false);
   const [listeVelger,setListeVelger] = useState(null); // vare-objekt
   const [nyListe,setNyListe] = useState(null); // {vareId: string|null}
   const [rapporter,setRapporter] = useState([]);
@@ -4347,7 +4377,7 @@ function App(){
   const [ekteButikkerLastet, setEkteButikkerLastet] = useState(false);
   const [rapporterVare,setRapporterVare] = useState(null);
   const [betaling,setBetaling] = useState(null); // "kjop" | "gratis"
-  const [erAdmin,setErAdmin] = useState(false);
+  const erAdmin = !!(authBruker?.email && ADMIN_EPOSTER.includes(authBruker.email.toLowerCase()));
   const [produktForslag,setProduktForslag] = useState([]);
   const [butikkForslag,setButikkForslag] = useState([]);
   const [saker,setSaker] = useState([]);
@@ -4377,15 +4407,12 @@ function App(){
         setFavoritter(d.favoritter||[]);
         setKurv(d.kurv||{});
         setLister(d.lister||[]);
-        setBrukere(d.brukere||[]);
-        setAktivBrukerId(d.aktivBrukerId||null);
         setRapporter(d.rapporter||[]);
         setBekreftelser(d.bekreftelser||[]);
         setSpiller(d.spiller||{xp:0,tillit:50,historikk:[]});
         setBelonningStatus(d.belonningStatus||{});
         setPremium(d.premium||{status:"ingen"});
         setVarsler(d.varsler||[]);
-        setErAdmin(!!d.erAdmin);
         setProduktForslag(d.produktForslag||[]);
         setButikkForslag(d.butikkForslag||[]);
         setSaker(d.saker||[]);
@@ -4411,10 +4438,10 @@ function App(){
   useEffect(()=>{
     if(fase!=="app") return;
     (async()=>{
-      try{ await window.storage.set(LAGRINGSNOKKEL, JSON.stringify({butikkIds,favoritter,kurv,lister,brukere,aktivBrukerId,rapporter,bekreftelser,spiller,belonningStatus,premium,varsler,erAdmin,produktForslag,butikkForslag,saker,betalinger,refusjoner,ekstraVarer,ekstraButikker,fjernedeVarer,fjernedeButikker,adminPriser,bildeOverstyr,harSettGuide})); }
+      try{ await window.storage.set(LAGRINGSNOKKEL, JSON.stringify({butikkIds,favoritter,kurv,lister,rapporter,bekreftelser,spiller,belonningStatus,premium,varsler,produktForslag,butikkForslag,saker,betalinger,refusjoner,ekstraVarer,ekstraButikker,fjernedeVarer,fjernedeButikker,adminPriser,bildeOverstyr,harSettGuide})); }
       catch(e){ console.error("Lagring feilet",e); }
     })();
-  },[fase,butikkIds,favoritter,kurv,lister,brukere,aktivBrukerId,rapporter,bekreftelser,spiller,belonningStatus,premium,varsler,erAdmin,produktForslag,butikkForslag,saker,betalinger,refusjoner,ekstraVarer,ekstraButikker,fjernedeVarer,fjernedeButikker,adminPriser,bildeOverstyr,harSettGuide]);
+  },[fase,butikkIds,favoritter,kurv,lister,rapporter,bekreftelser,spiller,belonningStatus,premium,varsler,erAdmin,produktForslag,butikkForslag,saker,betalinger,refusjoner,ekstraVarer,ekstraButikker,fjernedeVarer,fjernedeButikker,adminPriser,bildeOverstyr,harSettGuide]);
 
   // Last EAN-cache og start bakgrunnsoppdatering
   useEffect(()=>{
@@ -4450,7 +4477,12 @@ function App(){
       }
     })();
   },[fase]);
-  const bruker = brukere.find(b=>b.id===aktivBrukerId) || null;
+  const bruker = authBruker ? {
+    id: authBruker.id,
+    navn: authBruker.user_metadata?.navn || authBruker.email?.split("@")[0] || "Bruker",
+    epost: authBruker.email,
+    opprettet: authBruker.created_at ? new Date(authBruker.created_at).getTime() : Date.now(),
+  } : null;
   const leggIKurv = (id)=>{ setKurv(p=>({...p,[id]:(p[id]||0)+1})); visToast("Lagt i handlekurven"); };
   const endreKurv = (id,delta)=>setKurv(p=>{
     const n = (p[id]||0)+delta;
@@ -4482,26 +4514,37 @@ function App(){
     visToast(`${liste.varer.length} varer lagt i handlekurven`);
   };
 
-  /* — Konto (simulert) — */
-  const loggInn = (epost,passord)=>{
-    const b = brukere.find(x=>x.epost===epost);
-    if(!b || b.passord!==passord) return "Feil e-post eller passord. Prøv igjen, eller bruk «Glemt passordet?».";
-    setAktivBrukerId(b.id); setSide(null);
-    visToast(`Velkommen tilbake, ${b.navn.split(" ")[0]}!`);
+  /* — Konto (Supabase – ekte autentisering) — */
+  const loggInn = async (epost,passord)=>{
+    const res = await loggInnBruker(epost, passord);
+    if(res.feil) return res.feil;
+    setAuthBruker(res.bruker);
+    setSide(null);
+    visToast(`Velkommen tilbake, ${(res.bruker?.user_metadata?.navn||"").split(" ")[0]||""}!`.trim());
     return null;
   };
-  const registrer = (navn,epost,passord)=>{
-    if(brukere.some(x=>x.epost===epost)) return "Det finnes allerede en konto med denne e-postadressen. Logg inn i stedet.";
-    const b = {id:uid(),navn,epost,passord,opprettet:Date.now()};
-    setBrukere(p=>[...p,b]); setAktivBrukerId(b.id); setSide(null);
+  const registrer = async (navn,epost,passord)=>{
+    const res = await registrerBruker(navn, epost, passord);
+    if(res.feil) return res.feil;
+    setAuthBruker(res.bruker);
+    setSide(null);
     visToast("Kontoen er opprettet");
     return null;
   };
-  const nyttPassord = (epost,passord)=>setBrukere(p=>p.map(b=>b.epost===epost?{...b,passord}:b));
-  const loggUt = ()=>{ setAktivBrukerId(null); visToast("Du er logget ut"); };
-  const lagreProfil = (navn,epost)=>{
-    if(brukere.some(b=>b.epost===epost && b.id!==aktivBrukerId)) return "E-postadressen er allerede i bruk på en annen konto.";
-    setBrukere(p=>p.map(b=>b.id===aktivBrukerId?{...b,navn,epost}:b));
+  const sendTilbakestilling = async (epost)=>{
+    const res = await sendTilbakestillEpost(epost);
+    if(res.feil) return res.feil;
+    return null;
+  };
+  const loggUt = async ()=>{
+    await loggUtBruker();
+    setAuthBruker(null);
+    visToast("Du er logget ut");
+  };
+  const lagreProfil = async (navn,epost)=>{
+    const res = await oppdaterProfil(navn, epost && epost!==authBruker?.email ? epost : null);
+    if(res.feil) return res.feil;
+    setAuthBruker(res.bruker);
     setSide(null); visToast("Profilen er oppdatert");
     return null;
   };
@@ -4568,6 +4611,15 @@ function App(){
     visToast("Gratis Premium er aktivert");
   };
   const siOppPremium = ()=>{ setPremium(p=>({...p,sagtOpp:true})); visToast("Abonnementet er sagt opp – tilgangen varer ut perioden"); };
+  const gjenopprettKjop = ()=>{
+    // I App Store-versjonen vil dette spørre StoreKit om aktive kjøp og gjenopprette dem automatisk.
+    // Frem til da: gi brukeren en tydelig og ærlig vei videre.
+    if(premium.status==="betalt" || premium.status==="gratis"){
+      visToast("Premium er allerede aktivt på denne kontoen");
+    } else {
+      alert("Fant ikke et tidligere kjøp å gjenopprette på denne kontoen.\n\nHvis du har betalt for Premium fra App Store og ser denne meldingen, ta kontakt med support så hjelper vi deg.");
+    }
+  };
 
   /* — Forslag (produkter og butikker) — */
   const sendProduktForslag = (f)=>{
@@ -4689,10 +4741,10 @@ function App(){
 
   const nullstill = async()=>{
     try{ await window.storage.delete(LAGRINGSNOKKEL); }catch(e){}
-    setButikkIds([]); setFavoritter([]); setKurv({}); setLister([]); setBrukere([]); setAktivBrukerId(null);
+    setButikkIds([]); setFavoritter([]); setKurv({}); setLister([]); loggUtBruker().then(()=>setAuthBruker(null));
     setRapporter([]); setBekreftelser([]); setSpiller({xp:0,tillit:50,historikk:[]});
     setBelonningStatus({}); setPremium({status:"ingen"}); setVarsler([]);
-    setErAdmin(false); setProduktForslag([]); setButikkForslag([]); setSaker([]);
+    setProduktForslag([]); setButikkForslag([]); setSaker([]);
     setBetalinger([]); setRefusjoner([]); setEkstraVarer([]); setEkstraButikker([]);
     setFjernedeVarer([]); setFjernedeButikker([]); setAdminPriser({}); setBildeOverstyr({});
     setSide(null); setTab("produkter"); setFase("onboarding");
@@ -4708,11 +4760,27 @@ function App(){
     }
   }, [ekteButikker]);
 
+  // Sjekk innloggingsstatus mot Supabase ved oppstart, og lytt på endringer
+  useEffect(()=>{
+    let avslutt = false;
+    (async()=>{
+      try{
+        const bruker = await hentNaavaerendeBruker();
+        if(!avslutt) setAuthBruker(bruker);
+      } catch(e){ /* ingen nett / ikke konfigurert ennå */ }
+      finally{ if(!avslutt) setAuthLastet(true); }
+    })();
+    const unsub = lyttPaaAuthEndringer((event, bruker)=>{
+      setAuthBruker(bruker);
+    });
+    return ()=>{ avslutt = true; unsub(); };
+  }, []);
+
   if(fase==="laster") return (
-    <div style={{minHeight:"100vh",background:C.bg,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",fontFamily:FONT,gap:20}}>
+    <div style={{minHeight:"100vh",background:`linear-gradient(160deg, ${C.bg2} 0%, ${C.bg} 100%)`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",fontFamily:FONT,gap:20}}>
       <div style={{fontSize:52}}>🧭</div>
-      <div style={{fontSize:22,fontWeight:800,color:C.text,letterSpacing:-0.5}}>Matpilot</div>
-      <div style={{width:36,height:36,borderRadius:18,border:`3px solid ${C.border}`,borderTopColor:C.blue,animation:"spin 0.8s linear infinite"}}/>
+      <div style={{fontSize:22,fontWeight:800,color:C.textLys,letterSpacing:-0.5}}>Matsmart</div>
+      <div style={{width:36,height:36,borderRadius:18,border:`3px solid rgba(255,255,255,0.2)`,borderTopColor:"#fff",animation:"spin 0.8s linear infinite"}}/>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   );
@@ -4749,7 +4817,7 @@ function App(){
     innhold = <ArtikkelVisning artikkel={aapenArtikkel} onTilbake={()=>setAapenArtikkel(null)}/>;
   } else if(side?.navn==="konto"){
     innhold = <KontoSide onTilbake={()=>setSide(null)} onLoggInn={loggInn} onRegistrer={registrer}
-      onNyttPassord={nyttPassord} finnesEpost={(e)=>brukere.some(b=>b.epost===e)}/>;
+      onSendTilbakestilling={sendTilbakestilling}/>;
   } else if(side?.navn==="profilRediger" && bruker){
     innhold = <ProfilRedigerSide bruker={bruker} onLagre={lagreProfil} onTilbake={()=>setSide(null)}/>;
   } else if(side?.navn==="tilbud"){
@@ -4766,7 +4834,7 @@ function App(){
       onAktiverRabatt={aktiverRabatt} onStartGratis={()=>setBetaling("gratis")} onTilbake={()=>setSide(null)}/>;
   } else if(side?.navn==="premium"){
     innhold = <PremiumSide premium={premium} rabattKlar={rabattKlar} spiller={spiller} onKjop={()=>setBetaling("kjop")}
-      onSiOpp={siOppPremium} onTilbake={()=>setSide(null)}/>;
+      onSiOpp={siOppPremium} onGjenopprett={gjenopprettKjop} onTilbake={()=>setSide(null)}/>;
   } else if(side?.navn==="varsler"){
     innhold = <VarslerSide varsler={varsler} onTilbake={()=>setSide(null)} onLes={merkVarslerLest}/>;
   } else if(side?.navn==="foreslaaProdukt"){
@@ -4803,7 +4871,7 @@ function App(){
       ? <SakTraadSide key={"a"+sak.id} sak={sak} erAdmin onSvar={(t)=>svarSak(sak.id,"admin",t)} onStatusEndre={(st)=>settSakStatus(sak.id,st)} onTilbake={()=>setSide({navn:"adminSupport"})}/>
       : <AdminSupportSide saker={saker} onAapne={(id)=>setSide({navn:"adminSak",id})} onTilbake={()=>setSide({navn:"admin"})}/>;
   } else if(side?.navn==="adminRefusjon" && erAdmin){
-    innhold = <AdminRefusjonSide brukere={brukere} premium={premium} betalinger={betalinger} refusjoner={refusjoner}
+    innhold = <AdminRefusjonSide brukere={[]} premium={premium} betalinger={betalinger} refusjoner={refusjoner}
       onUtfor={utforRefusjon} onTilbake={()=>setSide({navn:"admin"})}/>;
   } else if(side?.navn==="lister"){
     innhold = <ListerSide lister={lister} onTilbake={()=>setSide(null)}
@@ -4832,7 +4900,6 @@ function App(){
           spiller={spiller} belonningStatus={belonningStatus} premium={premium} varsler={varsler}
           saker={saker} erAdmin={erAdmin} adminTall={adminTallSum}
           rapporter={rapporter} bekreftelser={bekreftelser}
-          onToggleAdmin={()=>{ setErAdmin(a=>!a); visToast(erAdmin?"Administratormodus av":"Administratormodus på"); }}
           gaaTil={setSide} onLoggUt={loggUt} onNullstill={nullstill}/>}
         <nav style={{position:"fixed",left:0,right:0,bottom:0,background:C.card,borderTop:`1px solid ${C.border}`,display:"flex",justifyContent:"space-around",padding:"8px 0 18px",zIndex:10}}>
           {TABS.map(t=>{
@@ -4862,7 +4929,7 @@ function App(){
   }
 
   return (
-    <div style={{minHeight:"100vh",background:C.bg,fontFamily:FONT}}>
+    <div style={{minHeight:"100vh",background:C.card2,fontFamily:FONT}}>
       {innhold}
       {listeVelger && (
         <ListeVelgerModal vare={listeVelger} lister={lister}
